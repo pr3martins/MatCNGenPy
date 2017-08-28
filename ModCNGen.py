@@ -16,7 +16,7 @@ wordHash = {}
 tupleHash ={}
 
 def createInvertedList():
-    #Create an index list with map['word'] = [ ('table','column') : ['frequency','ctid'] ]
+    #Create an index list with map['word'] = [ ('table','column') : ['ctid'] ]
 
     # Get list of tablenames
     cur.execute("SELECT tablename FROM pg_tables WHERE schemaname!='pg_catalog' AND schemaname !='information_schema';")
