@@ -1,0 +1,42 @@
+denzel washington;1;39927668
+clint eastwood;1;39172749
+john wayne;1;39931125
+will smith;1;39807078
+harrison ford;1;39214967
+julia roberts;1;40463372
+tom hanks;1;39295438
+johnny depp;1;39141807
+angelina jolie;1;40255278
+morgan freeman;1;39223764
+gone with the wind;1;43846320
+star wars;6;44182175;44190586;44160570;44200588;44215230;44215530
+casablanca;1;43757282
+lord of the rings;3;44246360;44300268;44282840
+the sound of music;1;44930023
+wizard of oz;1;44317680
+the notebook;1;44278650
+forrest gump;1;43843863
+the princess bride;1;44311171
+the godfather;1;44306726
+atticus finch;7;44264090;22335633;7900883;7900883;44264090;7900883;22335633
+indiana jones;4;44158312;43952269;43931406;44013047
+james bond
+rick blaine
+will kane
+hannibal lecter
+norman bates
+darth vader
+nurse ratched
+here looking kid
+hamill skywalker
+hanks 2004
+russell crowe gladiator
+brent spiner star trek
+audrey hepburn 1951
+jacques clouseau
+jack ryan
+rocky stallone
+terminator
+harrison ford george lucas
+sean connery fleming
+dean jones herbie
