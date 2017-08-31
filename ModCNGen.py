@@ -87,10 +87,15 @@ def TSFind(Q):
     '''
     #Part 3: Build tuple-sets
     Rq = {}
-    for keyword , (table_column,ctid) in P.items():
-        Rq
+    for keyword , tupleset in P.items():
+
+        Rq.setdefault(keyword,{})
+        
+        for (table_column,ctid) in tupleset:
     '''
-    
+            
+
+
 def TSInter(P):
     Pprev = P
     Pcurr = {}
@@ -111,45 +116,104 @@ def TSInter(P):
 
 
 def QMGen(Q,Rq):
-    Mq = set()
+    Mq = []
     for i in range(1,len(Q)+1):
-        for subset in itertools.combinations(Rq.items(),i):
-            if( isMinimalCover(subset)):
-                Mq.add(subset)
-'''
-def MinimalCover(Q):
-    for i in range(1,len(Q)+1):
-        for subset in itertools.combinations(Rq.items(),i):
-'''         
-            
-createInvertedList()
-print(loadQuerySets())
+        for subset in itertools.combinations(Rq.keys(),i):
+            print('---------------------------------------------------')
+            pprint.pprint(subset)
+            if(MinimalCover(subset,Q)):
+                print('TOTAL MINIMAL COVER\n==============================================')                
+                Mq.append(subset)
+                print('\n')
+    return Mq
 
-'''
-def getTupleSets(queryset):
-    for term in queryset:
-        print('term ',term)
-        for table_column,freq_ctids in wordHash.get(term).items():
-            print('table_column ',table_column,'freq_ctids ',ctids)
-            for ctid in ctids:
-                print('ctid ', ctid)
-                tupleHash.setdefault(ctid, {})
-                tupleHash[ctid].setdefault(term, []).append(table_column)
+
+def MinimalCover(Subset, Q):
+    u = set().union(*Subset)
+
+    isTotal = (u == set(Q))
+    for element in Subset:
+        new_u = list(Subset)
+        new_u.remove(element)
+        pprint.pprint(new_u)
+        
+        new_u = set().union(*new_u)
+        
+        if new_u == set(Q):
+            return False
     
-    for ctid, term_list_of_table_column in tupleHash.items():
-        new_key = []
-        new_value = {}
-        for term, list_of_table_column in term_list_of_table_column.items():
-            for table_column in list_of_table_column:
-                print('term ',term,'table_column ',table_column)
-                new_key.append(term)
-                new_value.setdefault(table_column, [0,]).append(ctid)
-                new_value[table_column][0]+=1
-        print('new_key ',new_key, 'new_value ',new_value)
-        #new_key  ['denzel', 'washington'] new_value  {('name', 'name'): [2, '(1257,105)', '(1257,105)']}
-        break
-'''
+    return isTotal
 
+
+def getSchemaGraph():
+    G = {} 
+    cur.execute("SELECT tablename FROM pg_tables WHERE schemaname!='pg_catalog' AND schemaname !='information_schema';")
+    for table in cur.fetchall():
+        G.setdefault(table[0],{})
+    
+    sql = "SELECT DISTINCT \
+                tc.table_name, kcu.column_name, \
+                ccu.table_name AS foreign_table_name, ccu.column_name AS foreign_column_name \
+            FROM information_schema.table_constraints AS tc  \
+            JOIN information_schema.key_column_usage AS kcu \
+                ON tc.constraint_name = kcu.constraint_name \
+            JOIN information_schema.constraint_column_usage AS ccu \
+                ON ccu.constraint_name = tc.constraint_name \
+            WHERE constraint_type = 'FOREIGN KEY'"
+    cur.execute(sql)
+    relations = cur.fetchall()
+    
+    for (table,column,foreign_table,foreign_column) in relations:
+        G[table][foreign_table] = (1,column, foreign_column)
+        G[foreign_table][table] = (-1,foreign_column,column)
+    return G
+
+#Gts = MatchGraphs(Rq,G,Mq[0])
+def MatchGraphs(Rq, G, match):
+    import copy
+    Gts = copy.deepcopy(G)
+    
+    tables = set()
+    #Insert non-free nodes
+    for tupleset in match:
+        for ( (table,column) , ctid) in Rq[tupleset]:
+            tables.add( (table,tupleset) )
+
+    #Update edges
+    for (table,tupleset) in tables:
+        Gts[(table,tupleset)]=copy.deepcopy(Gts[table])
+        for foreign_table , (direction,column,foreign_column) in Gts[(table,tupleset)].items():
+            Gts[foreign_table][(table,tupleset)] = (direction*(-1),foreign_column,column)
+    return Gts
+
+
+def MatchCN(Mq,G):
+    C = []
+    for M in Mq:
+        Gts = MatchGraphs(Rq,G,M)
+        Cn = SingleCN(M,Gts)
+        C.append(Cn)
+    return C
+
+def SingleCN(M, Gts):
+    #Input:  A query match M; A match graph Gts[M]
+    #Output: A single candidate network C
+
+    import queue
+    F = queue.Queue()
+
+    J = Gts
+    
+    
+
+createInvertedList()
+Q = ['denzel','washington','gangster']
+Rq = TSFind(Q)
+Mq = QMGen(Q,Rq)
+G = getSchemaGraph()    
+
+def pp(Object):
+    pprint.pprint(Object)
 
 '''
 # Make the changes to the database persistent
