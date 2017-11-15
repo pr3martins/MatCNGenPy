@@ -1,10 +1,10 @@
 import psycopg2
 from psycopg2 import sql
-import pprint
+from pprint import pprint as pp
 from collections import defaultdict
 import string
 import itertools
-
+import copy
 
 # Connect to an existing database
 conn = psycopg2.connect("dbname=imdb user=postgres")
@@ -13,18 +13,24 @@ conn = psycopg2.connect("dbname=imdb user=postgres")
 cur = conn.cursor()
 
 wordHash = {}
-tupleHash ={}
+
 
 def createInvertedList():
-    #Create an index list with map['word'] = [ ('table','column') : ['ctid'] ]
+    #Output: wordHash (Term Index) with this structure below
+    #map['word'] = [ 'table': ( {column} , ['ctid'] ) ]
+
+    '''
+    The Term Index is built in a preprocessing step that scans only
+    once all the relations over which the queries will be issued.
+    '''
 
     # Get list of tablenames
     cur.execute("SELECT tablename FROM pg_tables WHERE schemaname!='pg_catalog' AND schemaname !='information_schema';")
-
     for table in cur.fetchall():
         table_name = table[0]
+        
         print('INDEXING TABLE ',table_name)
-
+        
         #Get all tuples for this tablename
         cur.execute(
             sql.SQL("SELECT ctid, * FROM {};").format(sql.Identifier(table_name))
@@ -33,109 +39,126 @@ def createInvertedList():
 
         for row in cur.fetchall():
             for column in range(1,len(row)):
-                #print('column: ',column)
                 column_name = cur.description[column][0]
-                #print('column_name: ',column_name)
                 ctid = row[0]
 
-                #print('row[column]:',row[column])  
+                #NOTE: Need to remove stopwords
                 for word in [word.strip(string.punctuation) for word in str(row[column]).lower().split()]:
-                    #print('word: ',word)
-                    term_index = (table_name,column_name,ctid)
-                    #print(term_index)
 
                     #If word entry doesn't exists, it will be inicialized (setdefault method),
                     #Append the location for this word
                     wordHash.setdefault(word, {})
-                    wordHash[word].setdefault( (table_name,column_name) , [] ).append(ctid)
+                    wordHash[word].setdefault( table_name , (set(),[]) )
+                    wordHash[word][table_name][0].add(column_name)
+                    wordHash[word][table_name][1].append(ctid)
     print ('INVERTED INDEX CREATED')
 
 
-def loadQuerySets():
-    with open('querysets/queryset_imdb_inex.txt') as f:
-        querysets = []
-        for line in f.readlines():
-            querysets.append(line.lower().split())
-        return querysets
-
-'''
-    Termset is any non-empty subset K of the terms of a query Q
-    
-    Query match is a set of tuple-sets that, if properlyjoined,
-    can produce networks of tuples that fulfill the query. They
-    can be thought as the leaves of a Candidate Network.
-
-        
-'''
 def TSFind(Q):
+    #Input:  A keyword query Q=[k1, k2, . . . , km]
+    #Output: Set of non-free and non-empty tuple-sets Rq
+
+    '''
+    The tuple-set Rki contains the tuples of Ri that contain all
+    terms of K and no other keywords from Q
+    '''
+    
     #Part 1: Find sets of tuples containing each keyword
+    global P
     P = {}
     for keyword in Q:
-
-        tupleset = []
-        
-        for table_column, ctids in wordHash.get(keyword).items():
+        tupleset = set()
+        for table, (columns,ctids) in wordHash.get(keyword).items():
             for ctid in ctids:
-                tupleset.append( (table_column,ctid) )
-        
-        P[frozenset([keyword])] = set(tupleset)
+                tupleset.add( (table,ctid) )
+        P[frozenset([keyword])] = tupleset
 
     #Part 2: Find sets of tuples containing larger termsets
     P = TSInter(P)
 
-    return P
-    '''
-    #Part 3: Build tuple-sets
-    Rq = {}
-    for keyword , tupleset in P.items():
-
-        Rq.setdefault(keyword,{})
-        
-        for (table_column,ctid) in tupleset:
-    '''
-            
+    #Part 3:Build tuple-sets
+    Rq = set()
+    for keyword , tuples in P.items():
+        for (table,ctid) in tuples:
+            Rq.add( (table,keyword) )
+    print ('TUPLE SETS CREATED')
+    return Rq
 
 
 def TSInter(P):
-    Pprev = P
-    Pcurr = {}
-    for ( (Ki,Tki), (Kj,Tkj) ) in itertools.combinations(P.items(),2):
-        X = Ki | Kj
-        Tx = Tki & Tkj
-        if len(Tx) > 0:
-            Pcurr[X]  = Tx
-            Pprev[Ki] = Tki
-            Pprev[Kj] = Tkj
-    if Pcurr != {}:
-        Pcurr = TSInter(Pcurr)
+    #Input: A Set of non-empty tuple-sets for each keyword alone P 
+    #Output: The Set P, but now including larger termsets (process Intersections)
 
+    '''
+    Termset is any non-empty subset K of the terms of a query Q        
+    '''
+    
+    Pprev = {}
+    Pprev=copy.deepcopy(P)
+    Pcurr = {}
+
+    combinations = [x for x in itertools.combinations(Pprev.keys(),2)]
+    for ( Ki , Kj ) in combinations[0:4]:
+        Tki = Pprev[Ki]
+        Tkj = Pprev[Kj]
+        
+        X = Ki | Kj
+        Tx = Tki & Tkj        
+        
+        if len(Tx) > 0:            
+            Pcurr[X]  = Tx            
+            Pprev[Ki] = Tki - Tx         
+            Pprev[Kj] = Tkj - Tx
+            
+    if Pcurr != {}:
+        Pcurr = copy.deepcopy(TSInter(Pcurr))
+        
     #Pprev = Pprev U Pcurr
     Pprev.update(Pcurr)     
-
     return Pprev
 
+#Rq[frozenset({'denzel', 'washington'})]
+#Mq = QMGen(Q,Rq)
 
 def QMGen(Q,Rq):
+    #Input:  A keyword query Q, The set of non-empty non-free tuple-sets Rq
+    #Output: The set Mq of query matches for Q
+    
+    '''
+    Query match is a set of tuple-sets that, if properly joined,
+    can produce networks of tuples that fulfill the query. They
+    can be thought as the leaves of a Candidate Network.
+    
+    '''
+    
     Mq = []
     for i in range(1,len(Q)+1):
-        for subset in itertools.combinations(Rq.keys(),i):
-            print('---------------------------------------------------')
-            pprint.pprint(subset)
+        for subset in itertools.combinations(Rq,i):
             if(MinimalCover(subset,Q)):
-                print('TOTAL MINIMAL COVER\n==============================================')                
                 Mq.append(subset)
-                print('\n')
+    print ('QUERY MATCHES CREATED')
     return Mq
 
 
-def MinimalCover(Subset, Q):
-    u = set().union(*Subset)
+def MinimalCover(MC, Q):
+    #Input:  A subset MC (Match Candidate) to be checked as total and minimal cover
+    #Output: If the match candidate is a TOTAL and MINIMAL cover
 
+    '''
+    Total:   every keyword is contained in at least one tuple-set of the match
+    
+    Minimal: we can not remove any tuple-set from the match and still have a
+             total cover.    
+    '''
+    
+    Subset = [termset for table,termset in MC]
+    u = set().union(*Subset)    
+    
     isTotal = (u == set(Q))
     for element in Subset:
+        
         new_u = list(Subset)
         new_u.remove(element)
-        pprint.pprint(new_u)
         
         new_u = set().union(*new_u)
         
@@ -146,6 +169,10 @@ def MinimalCover(Subset, Q):
 
 
 def getSchemaGraph():
+    #Output: A Schema Graph G  with the structure below:
+    # G['node'] = edges
+    # G['table'] = { 'foreign_table' : (direction, column, foreign_column) }
+    
     G = {} 
     cur.execute("SELECT tablename FROM pg_tables WHERE schemaname!='pg_catalog' AND schemaname !='information_schema';")
     for table in cur.fetchall():
@@ -166,60 +193,78 @@ def getSchemaGraph():
     for (table,column,foreign_table,foreign_column) in relations:
         G[table][foreign_table] = (1,column, foreign_column)
         G[foreign_table][table] = (-1,foreign_column,column)
+    print ('SCHEMA CREATED')
     return G
 
-#Gts = MatchGraphs(Rq,G,Mq[0])
-def MatchGraphs(Rq, G, match):
-    import copy
+def MatchGraph(Rq, G, M):
+    #Input:  The set of non-empty non-free tuple-sets Rq,
+    #        The Schema Graph G,
+    #        A Query Match M
+    #Output: A Schema Graph Gts  with the structure below:
+    # G['node'] = edges
+    # G['table'] = { 'foreign_table' : (direction, column, foreign_column) }
+
+    '''
+    A Match Subgraph Gts[M] is a subgraph of G that contains:
+        The set of free tuple-sets of G
+        The query match M
+    '''
+    
     Gts = copy.deepcopy(G)
     
     tables = set()
     #Insert non-free nodes
-    for tupleset in match:
-        for ( (table,column) , ctid) in Rq[tupleset]:
-            tables.add( (table,tupleset) )
+    for (table , keywords) in M:
+        Gts[(table,keywords)]=copy.deepcopy(Gts[table])
+        for foreign_table , (direction,column,foreign_column) in Gts[(table,keywords)].items():
+            Gts[foreign_table][(table,keywords)] = (direction*(-1),foreign_column,column)
 
-    #Update edges
-    for (table,tupleset) in tables:
-        Gts[(table,tupleset)]=copy.deepcopy(Gts[table])
-        for foreign_table , (direction,column,foreign_column) in Gts[(table,tupleset)].items():
-            Gts[foreign_table][(table,tupleset)] = (direction*(-1),foreign_column,column)
-    return Gts
+    return Gts 
 
+def isJNTTotal(Gts,Ji,Q):
+    keywords = set()
+    for node in Ji:
+        if (type(node) is str):
+            continue
+        keywords = keywords | node[1]
+    return (keywords == set(Q))
 
-def MatchCN(Mq,G):
-    C = []
-    for M in Mq:
-        Gts = MatchGraphs(Rq,G,M)
-        Cn = SingleCN(M,Gts)
-        C.append(Cn)
-    return C
+def isJNTSound(Gts,Ji):
+    if len(Ji)<3:
+        return True
+    for i in range(len(Ji)-2):
+        if (Ji[i],)[0] == (Ji[i+2],)[0]:
+            edge_info = Gts[Ji[i]][Ji[i+1]]
+            if(edge_info[0] == -1):
+                return False
+    return True
 
-def SingleCN(M, Gts):
-    #Input:  A query match M; A match graph Gts[M]
-    #Output: A single candidate network C
+#CN = SingleCN(Mq[0],Gts,5,Q)
+def SingleCN(M,Gts,Tmax,Q):
+    from queue import deque
+    F = deque()
+    J = [M[0]]
+    F.append(J)
+    while F:
+        J = F.pop()
+        u = J[-1]
+        for (adjacent,edge_info) in Gts[u].items():
+            if (type(adjacent) is str) or (adjacent not in J):
+                Ji = J + [adjacent]
+                if (Ji not in F) and (len(Ji)<Tmax) and (isJNTSound(Gts,Ji)):
+                    if(isJNTTotal(Gts,Ji,Q)):
+                       return Ji
+                    else:
+                       F.append(Ji)
 
-    import queue
-    F = queue.Queue()
-
-    J = Gts
-    
-    
+def getSQLfromCN(Gts,Cn):
+    sql = 'SELECT * FROM ' + (Cn[0],)[0]
+    for i in range(len(Cn)):
+        
 
 createInvertedList()
 Q = ['denzel','washington','gangster']
 Rq = TSFind(Q)
 Mq = QMGen(Q,Rq)
-G = getSchemaGraph()    
-
-def pp(Object):
-    pprint.pprint(Object)
-
-'''
-# Make the changes to the database persistent
-conn.commit()
-
-# Close communication with the database
-cur.close()
-conn.close()
-'''
+G = getSchemaGraph()
+Gts =  MatchGraph(Rq,G,Mq[0])
