@@ -1,0 +1,3 @@
+.ipynb_checkpoints/
+datasets\imdb_subset-data.pgsql/
+datasets\imdb_subset-schema.pgsql/
