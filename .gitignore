@@ -1,5 +1,4 @@
 .ipynb_checkpoints/
-datasets\
-word_embeddings\
-
+datasets/
+word_embeddings/
 venv/
