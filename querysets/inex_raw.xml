@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- https://inex.mmci.uni-saarland.de/protected/dc/2011-dc-topics-adhocsearch-v2.xml -->
+
+<!DOCTYPE inex-topic-file [
+<!ENTITY  lt      "lessthan">
+<!ENTITY  gt      "greaterthan">
+<!ENTITY  amp     "ampersand">
+<!ELEMENT inex-topic-file (topic+)>
+<!ELEMENT topic (task,title,castitle,description,narrative)>
+<!ATTLIST topic id CDATA #REQUIRED>
+<!ATTLIST topic guid CDATA #REQUIRED>
+<!ELEMENT task (#PCDATA)>
+<!ELEMENT title (#PCDATA)>
+<!ELEMENT castitle (#PCDATA)>
+<!ELEMENT description (#PCDATA)>
+<!ELEMENT narrative (#PCDATA)>
+]>
+<inex-topic-file>
+<topic id="2011101" guid="11">
+	<task>AdHoc</task>
+	<title>social network</title>
+	<castitle>//movie[about(.,social network)]</castitle>
+	<description>I am searching for the hollywood film about "social network".</description>
+	<narrative>For personal interest, I am searching for the movie that present about the "social network".</narrative>
+</topic>
+<topic id="2011102" guid="17">
+	<task>AdHoc</task>
+	<title>best movie award "James Cameron"</title>
+	<castitle>//movie[about(.//director, "James Cameron") AND about(., best movie award)]</castitle>
+	<description>For which movies got James Cameron a best movie award?</description>
+	<narrative>I would like to find out for which movies got James Cameron a best movie award. It is not relevant which Academy gave him the award.</narrative>
+</topic>
+<topic id="2011103" guid="5">
+	<task>AdHoc</task>
+	<title>Actors that played James Bond</title>
+	<castitle>//person[about(.//act//movie//character, James Bond)]//name</castitle>
+	<description>Name all actors that played the role of James Bond</description>
+	<narrative>List the names of all actors that played the role of James Bond.</narrative>
+</topic>
+<topic id="2011104" guid="23">
+	<task>AdHoc</task>
+	<title>movie Ellen Page thriller</title>
+	<castitle>//movie[about(.//actor, "Ellen Page")]//genre[about(.//*, thriller)]</castitle>
+	<description>I want the movies with Ellen Page wich are thrillers</description>
+	<narrative>I like Ellen Page as an actress and I respect her movie choice but I'm more a thriller person so I want to find the movies she played which are thriller.</narrative>
+</topic>
+<topic id="2011105" guid="20">
+	<task>AdHoc</task>
+	<title>king kong jack black</title>
+	<castitle>//movie[about(.//title, king kong) and about(.//actor, jack black)]</castitle>
+	<description>I am searching for the version of the movie "King Kong" with the actor Jack Black.</description>
+	<narrative>Cause i've heard that this is the best King Kong movie, I am searching for the version of the movie "King Kong", with the actor Jack Black.</narrative>
+</topic>
+<topic id="2011106" guid="21">
+	<task>AdHoc</task>
+	<title>movie "Terry Gilliam" "Benicio del Toro" "Dr gonzo"</title>
+	<castitle>//movie[about(.//director ,"terry gilliam")]//actor[about(.//name, "benicio del toro") AND about(.//character, "dr gonzo")]</castitle>
+	<description>I want to find the movie directed by terry gilliam in which Benicio del toro play dr gonzo</description>
+	<narrative>I recall Benicio del toro playing a crazy lawyer called Dr Gonzo in a Terry Gilliam movie but I can't remember the name of that movie.</narrative>
+</topic>
+<topic id="2011107" guid="18">
+	<task>AdHoc</task>
+	<title>Tom Hanks biography</title>
+	<castitle>//person[about(., Tom Hanks)]//biography</castitle>
+	<description>I want to know more about Tom Hanks</description>
+	<narrative>As I want to know more about the history of cinema in America. Tom Hanks is one of most famous actors and I don't know who he is and what he directed. In order to do so I try to find his biography.</narrative>
+</topic>
+<topic id="2011108" guid="19">
+	<task>AdHoc</task>
+	<title>director of artificial intelligent "Haley Joel Osment"</title>
+	<castitle>//movie[about(.//title, artificial intelligent) AND about(.//actor, haley joel osment)]//director</castitle>
+	<description>Who is the director of the movie "Artificial Intelligent" stared with "Haley Joel Osment"?</description>
+	<narrative>I want to know the director of the movie "Artificial Intelligent" stared with "Haley Joel Osment".</narrative>
+</topic>
+<topic id="2011109" guid="22">
+	<task>AdHoc</task>
+	<title>Trivia "Don Quixote"</title>
+	<castitle>//movie[about(.//*, "Don Quixote")]//trivia</castitle>
+	<description>Trivia about Don Quixote movies</description>
+	<narrative>Don Quixote is supposed to be a cursed movie to make. I want to find the trivias about any Don Quixote movies ever made or planned.</narrative>
+</topic>
+<topic id="2011110" guid="3">
+	<task>AdHoc</task>
+	<title>plot seven</title>
+	<castitle>//movie[about(.//title, seven)]//plot</castitle>
+	<description>What is the plot of the movie Seven</description>
+	<narrative>I am interested in the plot of the movie Seven (also: Se7en)</narrative>
+</topic>
+<topic id="2011111" guid="8">
+	<task>AdHoc</task>
+	<title>french 1990</title>
+	<castitle>//movie[about(., french) and .//releasedate &gt; 1990]</castitle>
+	<description>Popular french movies since 1990</description>
+	<narrative>Popular french movies since 1990</narrative>
+</topic>
+<topic id="2011112" guid="29">
+	<task>AdHoc</task>
+	<title>food usa</title>
+	<castitle>//movie[about(.//plot, food) and about(.//country, USA)]</castitle>
+	<description>I am searching for movies, where food is in the plot and it is produced in the USA.</description>
+	<narrative>I am searching for movies about food and it is produced in the USA.</narrative>
+</topic>
+<topic id="2011113" guid="32">
+	<task>AdHoc</task>
+	<title>Paul Verhoeven Arnold Schwarzenegger</title>
+	<castitle>//movie[about(.//director, Paul Verhoeven) AND about(.//name, Arnold Schwarzenegger)]</castitle>
+	<description>I am looking for a movie directed by Paul Verhoeven featuring Arnold Schwarzenegger.</description>
+	<narrative>I wish to find information about the film where director Paul Verhoeven and actor Arnold Schwarzenegger collaborated.</narrative>
+</topic>
+<topic id="2011114" guid="34">
+	<task>AdHoc</task>
+	<title>computer animation</title>
+	<castitle>//movie[about(., computer animation)]</castitle>
+	<description>I am looking for information about computer-animated films.</description>
+	<narrative>I am looking for information about computer-animated films. Relevant results are computer-animated films, and documentaries (or 'making of' shows) that explain how these films are made.</narrative>
+</topic>
+<topic id="2011115" guid="27">
+	<task>AdHoc</task>
+	<title>aliens usa</title>
+	<castitle>//movie[about(., aliens) and about(., usa)]</castitle>
+	<description>I am searching for all information about aliens in the USA.</description>
+	<narrative> As i like aliens and i am very interested in everything about alien movies in combination with the usa i like to see as much information as possible.</narrative>
+</topic>
+<topic id="2011116" guid="26">
+	<task>AdHoc</task>
+	<title>action biker</title>
+	<castitle>//movie[about(.//genre, action) and about(., biker)]</castitle>
+	<description>Search for all action movies with bikers in it.</description>
+	<narrative>As i like action movies, specially if bikers are in it, i like to get a list of all these movies.</narrative>
+</topic>
+<topic id="2011117" guid="28">
+	<task>AdHoc</task>
+	<title>animation fairy-tale</title>
+	<castitle>//movie[about(.//genre, animation) and about(.//plot, fairy-tale)]</castitle>
+	<description>I am searching for all animation movies based on a fairy-tale.</description>
+	<narrative>I like fairy-tales and their animations remakes.</narrative>
+</topic>
+<topic id="2011118" guid="30">
+	<task>AdHoc</task>
+	<title>musical webber</title>
+	<castitle>//movie[about(.//plot, musical) and about(., webber)]</castitle>
+	<description>I am searching for movies about musicals from Andrew Llyod Webber.</description>
+	<narrative>I am searching for movies about musicals from Andrew Llyod Webber.</narrative>
+</topic>
+<topic id="2011119" guid="31">
+	<task>AdHoc</task>
+	<title>baseball usa</title>
+	<castitle>//movie[about(.//plot, baseball) and about(., usa)]</castitle>
+	<description>I am searching for movies about baseball and anything to do with the USA.</description>
+	<narrative>I am searching for movies about baseball and anything to do with the USA.</narrative>
+</topic>
+<topic id="2011120" guid="40">
+	<task>AdHoc</task>
+	<title>Vietnam war true story</title>
+	<castitle>//movie[about(.//plot, vietnam war true story)]</castitle>
+	<description>I'm looking for movies about the Vietnam war based on true stories.</description>
+	<narrative>I would like to watch movies about the Vietnam war. I am not interested in fictional stories that take place in the war. I am also not interested in documentaries. Relevant movies are only those that are based on true stories from the Vietnam war.</narrative>
+</topic>
+<topic id="2011121" guid="65">
+	<task>AdHoc</task>
+	<title>Spoofing comedies</title>
+	<castitle>//movie[about(.//genre, comedy ) and about(.//plot, spoof)]//title</castitle>
+	<description>Find comedy movies/documentaries spoofing people or other movies.</description>
+	<narrative>I want to find comedy movies/documentaries that spoof people or other movies.</narrative>
+</topic>
+<topic id="2011122" guid="47">
+	<task>AdHoc</task>
+	<title>Chernobyl</title>
+	<castitle>//movie[about(.//plot, chernobyl ) or about(.//location, chernobyl)]</castitle>
+	<description>I want to know everything about movies that deal with the nuclear-accident in Chernobyl</description>
+	<narrative>I am interested in all the information about how the topic Chernobyl was dealt with in movies. Movies that are about people or aftermath of the nuclear accident are relevant.</narrative>
+</topic>
+<topic id="2011123" guid="55">
+	<task>AdHoc</task>
+	<title>Worst actor century</title>
+	<castitle>//person[about(.//trivia, Worst Actor of the Century)]//name</castitle>
+	<description>Searching for the personed awarded "worst actor of the century".</description>
+	<narrative>I am looking for the personed awarded "the worst actor of the century".</narrative>
+</topic>
+<topic id="2011124" guid="57">
+	<task>AdHoc</task>
+	<title>survive desert island</title>
+	<castitle>//movie[about(., survive desert island)]</castitle>
+	<description>I like to find movies or documentaries about surviving on a desert island</description>
+	<narrative>I am a teacher and I want to teach my students survival techniques. That is why I am searching for movies about people having to survive on a desert island, to show my students what techniques they use. Any movie or documentary about the topic is relevant. I am not interested in TV programs or reality shows.  </narrative>
+</topic>
+<topic id="2011125" guid="59">
+	<task>AdHoc</task>
+	<title>Movies directed by Steven Spielberg</title>
+	<castitle>//movie[about(.//director, Steven Spielberg)]//title</castitle>
+	<description>Name all movies directed by Steven Spielberg</description>
+	<narrative>List the names of all movies that have been directed by Steven Spielberg so far.</narrative>
+</topic>
+<topic id="2011126" guid="46">
+	<task>AdHoc</task>
+	<title>German fellow actors of Mel Gibson</title>
+	<castitle>//actor[about(.//name, Mel Gibson ) and about(.//biography, Germany)]</castitle>
+	<description>I want to find all German fellow actors of Mel Gibson.</description>
+	<narrative>I want to know the names of German actors that played in movies together with Mel Gibson. Only actors that played in movies where Mel Gibson also was actor are relevant.</narrative>
+</topic>
+<topic id="2011127" guid="43">
+	<task>AdHoc</task>
+	<title>Maureen Lipman as mother of Jewish musician</title>
+	<castitle>//movie[about(.//actor, Maureen Lipman ) and about(.//character, mother) and about(.//character, musician)]</castitle>
+	<description>What was the title of the movie where Maureen Lipman played the mother of a Polish Jewish musician</description>
+	<narrative>I want to know original title of the movie where Maureen Lipman played the mother of a Polish Jewish musician.</narrative>
+</topic>
+<topic id="2011128" guid="56">
+	<task>AdHoc</task>
+	<title>lovers arctic Spanish</title>
+	<castitle>//movie[about(.//title, arctic lovers) AND about(.//additional_details, Spanish)]</castitle>
+	<description>I am searching for a Spanish movie which title was something about arctic lovers</description>
+	<narrative>I saw this movie long time ago and I would like to watch it again. I remember it was a Spanish movie and that it was called something about lovers and arctic.
+</narrative>
+</topic>
+<topic id="2011129" guid="51">
+	<task>AdHoc</task>
+	<title>Alien Movies before 1970</title>
+	<castitle>//movie[about(.//plot, Alien) AND .//releasedate &lt; 1970]</castitle>
+	<description>I want to find movies about extraterrestrials that were shot before 1970.</description>
+	<narrative>I want to find movies about extraterrestrials that were shot before 1970.</narrative>
+</topic>
+<topic id="2011130" guid="66">
+	<task>AdHoc</task>
+	<title>non-european Dogme 95 movies</title>
+	<castitle>//movie[about(., non-european Dogme 95)]</castitle>
+	<description>I am interested in finding non-european movies that were shot under the Dogme 95 movement</description>
+	<narrative>I am interested in the Dogme 95 movement and I want to find out how far this European idea extended. That is why I am trying to find out how many and which of these movies were created in non-european countries.              </narrative>
+</topic>
+<topic id="2011131" guid="4">
+	<task>AdHoc</task>
+	<title>actor in "The Fellowship of the Ring" and "The Return of the King" and "The Two Towers"</title>
+	<castitle>//person[about(.//act//movie//title, The Fellowship of the Ring) and  about(.//act//movie//title, The Return of the King) and about(.//act//movie//title,The Two Towers)]//name</castitle>
+	<description>List all actors that played in the three Lord of the Ring movies  "The Fellowship of the Ring", "The Return of the King"\and "The Two Towers"</description>
+	<narrative>List all actors that played in all three the three Lord of the Ring movies "The Fellowship of the Ring", "The Return of the King" and "The Two Towers". I only want actors that played in all three, not just in one or two of the movies.</narrative>
+</topic>
+<topic id="2011132" guid="54">
+	<task>AdHoc</task>
+	<title>Director John Hughes Matthew Broderick 1986</title>
+	<castitle>//movie[about(.//actor, Matthew Broderick) and about(.//trivia, 1986 ) and about(.//director, John Hughes)]</castitle>
+	<description>The name of the 1986 released movie which was directed by John Hughes and had Matthew Broderick as actor in it.</description>
+	<narrative>Tell me the name of the movie which came out 1986, was directed by John Hughes, and Matthew Broderick played in it.</narrative>
+</topic>
+<topic id="2011133" guid="33">
+	<task>AdHoc</task>
+	<title>cast Friends tv-series</title>
+	<castitle>//person[about(.//title, Friends) AND about(., tv-series cast)] </castitle>
+	<description>I want a list of actors that played in the tv-series Friends.</description>
+	<narrative>I am looking for information about the cast of the tv-series Friends. A relevant person is any person who appeared regularly on the show. I am not interested in single-episode guest appearances, but repeated guest appearances (&gt;1 episode) are relevant. I wish to see as much information as possible about these actors.</narrative>
+</topic>
+<topic id="2011134" guid="60">
+	<task>AdHoc</task>
+	<title>actor death during filming</title>
+	<castitle>//trivia[about(., actor death during filming)]</castitle>
+	<description>I want to know what happens when one of the main actors dies during the filming of a movie.</description>
+	<narrative>I am writing an article for the local newspaper on fatal accidents during movie filming. I want to find information about how directors deal with the death of a main actor/actress. What happens next? the actor is replaced, the movie is never finished, etc.
+I am not interested in bibliographies from actors that died during some movie filming unless they provide information about what happened with the movie.</narrative>
+</topic>
+<topic id="2011135" guid="37">
+	<task>AdHoc</task>
+	<title>Cannes documentary</title>
+	<castitle>//movie[about(., Cannes) AND about(.//genre, Documentary)]</castitle>
+	<description>I'm looking for documentaries about the Cannes Film Festival.</description>
+	<narrative>I am thinking of visiting the Cannes Film Festival, but I do not quite know what to expect. To get an idea of what's going on, I wish to view some documentaries and reports of the festival. Relevant results are tv shows that provide coverage of the festival's events, documentaries about the history of the festival, etc. I am not interested in movies that were shown or released at the festival.</narrative>
+</topic>
+<topic id="2011136" guid="36">
+	<task>AdHoc</task>
+	<title>trained dolphins whales</title>
+	<castitle>//movie[about(.//overview, trained dolphin) OR about(.//overview, trained whale)]</castitle>
+	<description>I am looking for information about trained dolphins and whales that appear in movies.</description>
+	<narrative>I like movies which involve trained marine mammals. I am therefore looking for movies that feature dolphins or whales. Relevant movies are documenaries or reports showing how these animals are trained, and movies in which a dolphin or whale has a leading role. I am not interested in animal documentaries, unless they are actually about training the animals.</narrative>
+</topic>
+<topic id="2011137" guid="15">
+	<task>AdHoc</task>
+	<title>romance movies by Leonardo DiCaprio or Tom Cruise</title>
+	<castitle>//movie[about(.//genre, romance) AND (about(.//actor, Leonardo DiCaprio) OR about(.//actor, Tom Cruise))]</castitle>
+	<description>Find romance movies played by Leonardo DiCaprio or Tom Cruise.</description>
+	<narrative>I feel like watching a romance movie played by Leonardo DiCaprio or Tom Cruise. I do not recall any title now but any romance played by one of these actors it is a relevant element.</narrative>
+</topic>
+<topic id="2011138" guid="14">
+	<task>AdHoc</task>
+	<title>ancient Egyptian era</title>
+	<castitle>//movie[about(.//plot, ancient egyptian era)]</castitle>
+	<description>find the movies about the era of ancient Egyptian.</description>
+	<narrative>I am interested in the movies about era of ancient Egiptian. I am looking for movies talking stories in the era of ancient Egyptian.</narrative>
+</topic>
+<topic id="2011139" guid="63">
+	<task>AdHoc</task>
+	<title>People having appeared in the Rolling Stone</title>
+	<castitle>//person[about(.//magazine, Rolling Stone )]</castitle>
+	<description>Find people having appeared in the Rolling Stone magazine.</description>
+	<narrative>I want to find people who have appeared in the Rolling Stone magazine.</narrative>
+</topic>
+<topic id="2011140" guid="61">
+	<task>AdHoc</task>
+	<title>food industry documentaries</title>
+	<castitle>//movie[about(.//genre, documentary) AND about(., food industry)]</castitle>
+	<description>I am searching for documentaries about food industry</description>
+	<narrative>For my personal interest, I am searching for documentaries that talk about food industry. I am not interested in the story of a particular product but in the food industry in general. Documents were the summary/overview of the documentary is not given will be considered irrelevant.</narrative>
+</topic>
+<topic id="2011141" guid="42">
+	<task>AdHoc</task>
+	<title>Vietnam jungle</title>
+	<castitle>//movie[about(., jungle) and about(.//location, Vietnam)]</castitle>
+	<description>I'm looking for information about the jungles of Vietnam.</description>
+	<narrative>I am visiting the jungles of Vietnam for field work. I would therefore like to learn more about the jungle of Vietnam. Movies in which Vietnam jungle is displayed are relevant. I am not interested in movies about the Vietnam war, unless they highlight some aspect of the jungle.</narrative>
+</topic>
+<topic id="2011142" guid="41">
+	<task>AdHoc</task>
+	<title>born Vietnam</title>
+	<castitle>//person[about(.//birth_date, Vietnam)]</castitle>
+	<description>I'm looking for information about actors that were born in Vietnam.</description>
+	<narrative>I am interested in actors that were born in Vietnam. Only actors that were themselves born in Vietnam are relevant. I am not interested in actors that have Vietnamese ancestry, but were born somewhere else.</narrative>
+</topic>
+<topic id="2011143" guid="67">
+	<task>AdHoc</task>
+	<title>Documentaries US Presidents</title>
+	<castitle>//movie[about(.//genre, documentary) AND about(., US President)]</castitle>
+	<description>I am looking for documentaries about US Presidents.</description>
+	<narrative>I am interested in US history. I am searching for documentaries about US Presidents. Any documentary talking about any aspect of a US President is relevant. The documentary does not have to be a complete biography about a US President, if it is about a specific event on his life it is also relevant. I am not interested in movies about US Presidents because I am then uncertain about what is real and what is not.</narrative>
+</topic>
+<topic id="2011144" guid="39">
+	<task>AdHoc</task>
+	<title>Cannes jury</title>
+	<castitle>//person[about(., Cannes) and about(.//trivia, jury)]</castitle>
+	<description>I'm looking for information about members of the Cannes jury.</description>
+	<narrative>I am thinking of visiting the Cannes Film Festival, but I do not quite know what to expect. To get an idea of which persons are frequent visitors, I am interested in finding out which persons are members of the jury. Any person that has ever been a member of a Cannes jury is relevant.</narrative>
+</topic>
+<topic id="2011145" guid="38">
+	<task>AdHoc</task>
+	<title>Palme d'Or winner</title>
+	<castitle>//movie[about(., Cannes) AND about(.//trivia, Palme d'Or winner)]</castitle>
+	<description>I'm looking for movies that won the Palme d'Or award at the Cannes Film Festival.</description>
+	<narrative>I am thinking of visiting the Cannes Film Festival, but I do not quite know what to expect. To get an idea of the kinds of movies that are shown there, I wish to find information about movies that won the Palme d'Or awards. Relevant movies are those movies that won the award. Results that explain more about the awards (its history etc.) are also welcome. I am not interested in movies that were only nominated. That is, only winning movies are relevant.</narrative>
+</topic>
+</inex-topic-file>

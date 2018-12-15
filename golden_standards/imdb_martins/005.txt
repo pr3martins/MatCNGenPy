@@ -1,0 +1,43 @@
+# [reference standard])
+# imdb2009
+# Protagonist of the sound of music
+([44308629, 6474612, 21283792], [(6474612, 44308629), (6474612, 21283792)]) # Captain von Trapp in The Sound of Music
+([44308629, 8052735, 22357441], [(8052735, 44308629), (8052735, 22357441)]) # Captain Von Trapp in The Sound of Music
+([44308629, 8720632, 21338416], [(8720632, 44308629), (8720632, 21338416)]) # Party in The Sound of Music
+([44308629, 8720633, 21275295], [(8720633, 44308629), (8720633, 21275295)]) # Dance Extra in The Sound of Music
+([44308629, 9245279, 21219512], [(9245279, 44308629), (9245279, 21219512)]) # Franz in The Sound of Music
+([44308629, 10116868, 22751222], [(10116868, 44308629), (10116868, 22751222)]) # Herr Zeller in The Sound of Music
+([44308629, 10894794, 22769549], [(10894794, 44308629), (10894794, 22769549)]) # Liesl in The Sound of Music
+([44308629, 12279364, 22900304], [(12279364, 44308629), (12279364, 22900304)]) # Gretl in The Sound of Music
+([44308629, 5370619, 21217730], [(5370619, 44308629), (5370619, 21217730)]) # Friedrich in The Sound of Music
+([44308629, 5424006, 21310034], [(5424006, 44308629), (5424006, 21310034)]) # Party Extra in The Sound of Music
+([44308629, 10371724, 21341963], [(10371724, 44308629), (10371724, 21341963)]) # Maria in The Sound of Music
+([44308629, 12636932, 23316093], [(12636932, 44308629), (12636932, 23316093)]) # Baroness Ebberfeld in The Sound of Music
+([44308629, 13229330, 23094293], [(13229330, 44308629), (13229330, 23094293)]) # Sister Sophia in The Sound of Music
+([44308629, 14432728, 22886754], [(14432728, 44308629), (14432728, 22886754)]) # Frau Schmidt in The Sound of Music
+([44308629, 3476654, 21309161], [(3476654, 44308629), (3476654, 21309161)]) # Nazi in The Sound of Music
+([44308629, 10476574, 22884748], [(10476574, 44308629), (10476574, 22884748)]) # Sister Bernice in The Sound of Music
+([44308629, 10908333, 22796052], [(10908333, 44308629), (10908333, 22796052)]) # Brigitta in The Sound of Music
+([44308629, 12922443, 22819127], [(12922443, 44308629), (12922443, 22819127)]) # Mother Abbess in The Sound of Music
+([44308629, 12960869, 22615805], [(12960869, 44308629), (12960869, 22615805)]) # Louisa in The Sound of Music
+([44308629, 13191100, 23251939], [(13191100, 44308629), (13191100, 23251939)]) # Sister Berthe in The Sound of Music
+([44308629, 3689221, 21273742], [(3689221, 44308629), (3689221, 21273742)]) # Kurt in The Sound of Music
+([44308629, 5467580, 21899075], [(5467580, 44308629), (5467580, 21899075)]) # Max Detweiler in The Sound of Music
+([44308629, 9545374, 21306961], [(9545374, 44308629), (9545374, 21306961)]) # Rolfe in The Sound of Music
+([44308629, 12545861, 23130542], [(12545861, 44308629), (12545861, 23130542)]) # Sister Margaretta in The Sound of Music
+([44308629, 13378326, 21879972], [(13378326, 44308629), (13378326, 21879972)]) # The Baroness in The Sound of Music
+([44308629, 14355047, 22889052], [(14355047, 44308629), (14355047, 22889052)]) # Sister Agatha in The Sound of Music
+([44308629, 14367291, 21400710], [(14367291, 44308629), (14367291, 21400710)]) # Marta in The Sound of Music
+([44308629, 14503576, 23436840], [(14503576, 44308629), (14503576, 23436840)]) # Extra during 'I Have Confidence' number in The Sound of Music
+([44308629, 14671310, 22819127], [(14671310, 44308629), (14671310, 22819127)]) # Mother Abbess in The Sound of Music
+([44089791, 7551185, 21294663], [(7551185, 44089791), (7551185, 21294663)]) # Himself in Music Sounds
+([44089791, 8871342, 21294663], [(8871342, 44089791), (8871342, 21294663)]) # Himself in Music Sounds
+([44281241, 4276276, 21294663], [(4276276, 44281241), (4276276, 21294663)]) # Himself in The Sound of India: A Musical Culture on the Move
+([44281241, 5970711, 21294663], [(5970711, 44281241), (5970711, 21294663)]) # Himself in The Sound of India: A Musical Culture on the Move
+([44281241, 9064900, 21294663], [(9064900, 44281241), (9064900, 21294663)]) # Himself in The Sound of India: A Musical Culture on the Move
+([44281241, 2489696, 21294663], [(2489696, 44281241), (2489696, 21294663)]) # Himself in The Sound of India: A Musical Culture on the Move
+([44281241, 2745335, 21294663], [(2745335, 44281241), (2745335, 21294663)]) # Himself in The Sound of India: A Musical Culture on the Move
+([44281241, 2726950, 21294663], [(2726950, 44281241), (2726950, 21294663)]) # Himself in The Sound of India: A Musical Culture on the Move
+([44281241, 3090075, 21218449], [(3090075, 44281241), (3090075, 21218449)]) # Themselves in The Sound of India: A Musical Culture on the Move
+([44281241, 9699175, 21294663], [(9699175, 44281241), (9699175, 21294663)]) # Himself in The Sound of India: A Musical Culture on the Move
+([44281241, 13349618, 21256789], [(13349618, 44281241), (13349618, 21256789)]) # Herself in The Sound of India: A Musical Culture on the Move
