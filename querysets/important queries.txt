@@ -1,0 +1,14 @@
+Consultas importantes:
+
+
+king kong with jack black
+retorna na primeira CN
+king kong with the actor jack black
+retorna na quinta Cn
+
+
+actor Draco Harry Potter
+precisa da arvore
+
+actor in The Fellowship of the Ring and The Return of the King
+precisa não ser árvore

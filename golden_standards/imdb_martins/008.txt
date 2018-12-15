@@ -1,5 +1,5 @@
 # [reference standard]
 # imdb2009
-# king kong jack black
-([(44149946, 3091127, 38995896)], []) #actor Jack Black in Sci Fi Inside: 'King Kong' movie
-([(43970937, 3091093, 38995896)], []) #actor Jack Black in King Kong movie
+# king kong with actor jack black
+([(44149946, 3091127, 38995896)], [(38995896, 3091127), (44149946, 3091127)]) #Black, Jack in Sci Fi Inside: 'King Kong'
+([(43970937, 3091093, 38995896)], [(38995896, 3091093), (43970937, 3091093)]) #Black, Jack in King Kong
