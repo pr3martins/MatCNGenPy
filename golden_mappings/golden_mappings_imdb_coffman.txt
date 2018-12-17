@@ -1,0 +1,77 @@
+# denzel washington
+# clint eastwood
+# john wayne
+# will smith
+# harrison ford
+# julia roberts
+# tom hanks
+# johnny depp
+# angelina jolie
+# morgan freeman
+# gone with the wind
+# star wars
+# casablanca
+# lord of the rings
+# the sound of music
+# wizard of oz
+# the notebook
+# forrest gump
+# the princess bride
+# the godfather
+# title atticus finch
+('movie', 'title', frozenset({'title'}), frozenset())
+# title indiana jones
+('movie', 'title', frozenset({'title'}), frozenset())
+# title james bond
+('movie', 'title', frozenset({'title'}), frozenset())
+# title rick blaine
+('movie', 'title', frozenset({'title'}), frozenset())
+# title will kane
+('movie', 'title', frozenset({'title'}), frozenset())
+# title dr. hannibal lecter
+('movie', 'title', frozenset({'title'}), frozenset())
+# title norman bates
+('movie', 'title', frozenset({'title'}), frozenset())
+# title darth vader
+('movie', 'title', frozenset({'title'}), frozenset())
+# title the wicked witch of the west
+('movie', 'title', frozenset({'title'}), frozenset())
+# title nurse ratched
+('movie', 'title', frozenset({'title'}), frozenset())
+# title frankly i give a damn
+('movie', 'title', frozenset({'title'}), frozenset())
+# title make an offer refuse
+('movie', 'title', frozenset({'title'}), frozenset())
+# title i coulda class contender somebody bum
+('movie', 'title', frozenset({'title'}), frozenset())
+# title toto feeling kansas any more
+('movie', 'title', frozenset({'title'}), frozenset())
+# title looking at you kid
+('movie', 'title', frozenset({'title'}), frozenset())
+# hamill skywalker
+# hanks 2004
+# henry fonda yours mine ours character name
+('character', '*', frozenset({'character'}), frozenset())
+('character', 'name', frozenset({'name'}), frozenset())
+('person', 'name', frozenset({'name'}), frozenset())
+# russell crowe gladiator character name
+('character', '*', frozenset({'character'}), frozenset())
+('character', 'name', frozenset({'name'}), frozenset())
+('person', 'name', frozenset({'name'}), frozenset())
+# brent spiner star trek
+# audrey hepburn 1951
+# name jacques clouseau
+('character', 'name', frozenset({'name'}), frozenset())
+('person', 'name', frozenset({'name'}), frozenset())
+# name jack ryan
+('character', 'name', frozenset({'name'}), frozenset())
+('person', 'name', frozenset({'name'}), frozenset())
+# rocky stallone
+# name terminator
+('character', 'name', frozenset({'name'}), frozenset())
+('person', 'name', frozenset({'name'}), frozenset())
+# harrison ford george lucas
+# sean connery fleming
+# reeves wachowski
+# dean jones herbie
+# indiana jones last crusade lost ark
