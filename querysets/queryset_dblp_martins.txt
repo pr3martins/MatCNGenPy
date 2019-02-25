@@ -1,0 +1,10 @@
+articles VLDB
+papers data mining
+publications nikos clique
+author query optimization
+conference histridis bergamaschi
+database publications
+Solomon Snyder papers
+springer sigmod researchers
+Sigmund Freud articles
+Protein measurement author
