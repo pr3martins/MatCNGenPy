@@ -16,12 +16,39 @@ jupyter:
 ```python
 from pprint import pprint as pp
 import gc #garbage collector usado no createinvertedindex
-```
 
-```python
+
+import psycopg2
+from psycopg2 import sql
+import string
+
+import nltk 
+from nltk.corpus import stopwords
+nltk.download('stopwords')
+
+
+
 import gensim.models.keyedvectors as word2vec
 from gensim.models import KeyedVectors
 
+from math import log1p 
+import copy
+import itertools
+import pprint 
+import copy
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import wordnet as wn
+from queue import deque
+```
+
+```python
+def tokenizeString(text):     
+    return [word.strip(string.punctuation) 
+            for word in text.lower().split() 
+            if word not in stopwords.words('english') + ['will']]
+```
+
+```python
 def loadWordEmbeddingsModel(filename = "word_embeddings/word2vec/GoogleNews-vectors-negative300.bin"):
     model = KeyedVectors.load_word2vec_format(filename,
                                                        binary=True, limit=500000)
@@ -160,18 +187,10 @@ class WordHash(dict):
 ```
 
 ```python
-import psycopg2
-from psycopg2 import sql
-import string
 
-import nltk 
-from nltk.corpus import stopwords
-nltk.download('stopwords')
-
-stw_set = set(stopwords.words('english')) - {'will'}
 
 class DatabaseIter:
-    def __init__(self,embeddingModel,dbname='dblp',user='imdb',password='imdb'):
+    def __init__(self,embeddingModel,dbname='imdb',user='imdb',password='imdb'):
         self.dbname=dbname
         self.user=user
         self.password =password
@@ -220,29 +239,14 @@ class DatabaseIter:
 
                             ctid = row[0]
 
-                            for word in [word.strip(string.punctuation) for word in str(row[column]).lower().split()]:
-
-                                #Ignoring STOPWORDS
-                                if word in stw_set:
-                                    continue
-
+                            for word in tokenizeString( str(row[column]) ):
                                 yield table_name,ctid,column_name, word
 
                         printSkippedColumns=False
 ```
 
 ```python
-import psycopg2
-from psycopg2 import sql
-import string
-
-import nltk 
-from nltk.corpus import stopwords
-nltk.download('stopwords')
-
-stw_set = set(stopwords.words('english')) - {'will'}
-
-def createInvertedIndex(embeddingModel,dbname='dblp',user='imdb',password='imdb',showLog=True):
+def createInvertedIndex(embeddingModel,dbname='imdb',user='imdb',password='imdb',showLog=True):
     #Output: wordHash (Term Index) with this structure below
     #map['word'] = [ 'table': ( {column} , ['ctid'] ) ]
 
@@ -293,8 +297,6 @@ pp(ah)
 ```
 
 ```python
-from math import log1p 
-
 def processIAF(wordHash,attributeHash):
     
     total_attributes = sum([len(attribute) for attribute in attributeHash.values()])
@@ -339,7 +341,6 @@ processNormsOfAttributes(wh,ah)
 ## Class Tupleset
 
 ```python
-import copy
 class Tupleset:
    
     def __init__(self, table, predicates = None, tuples = None):            
@@ -503,7 +504,6 @@ p = [(x,attribute,schemaWords) for attribute, (schemaWords, _ ) in y.items() if 
 ```
 
 ```python
-import itertools
 def TSFindClass(Q,wordHash):
     #Input:  A keyword query Q=[k1, k2, . . . , km]
     #Output: Set of non-free and non-empty tuple-sets Rq
@@ -626,7 +626,7 @@ def TSInterMartins(P):
 ```
 
 ```python
-def getQuerySets(filename='querysets/queryset_dblp_martins.txt'):
+def getQuerySets(filename='querysets/queryset_imdb_martins.txt'):
     QuerySet = []
     with open(filename,encoding='utf-8-sig') as f:
         for line in f.readlines():
@@ -634,14 +634,19 @@ def getQuerySets(filename='querysets/queryset_dblp_martins.txt'):
             #The line bellow Remove words not in OLIVEIRA experiments
             #Q = [word.strip(string.punctuation) for word in line.split() if word not in ['title','dr.',"here's",'char','name'] and word not in stw_set]  
             
-            Q = tuple([word.strip(string.punctuation) for word in line.lower().split() if word not in stw_set])
+            Q = tuple(tokenizeString(line))
             
             QuerySet.append(Q)
     return QuerySet
 ```
 
 ```python
-Q= ['author','datacenter','2015']
+QuerySets = getQuerySets(filename='querysets/queryset_imdb_martins.txt')
+QuerySets
+```
+
+```python
+Q = QuerySets[0]
 ```
 
 ```python
@@ -655,8 +660,6 @@ Rq
 ## class SchemaGraph
 
 ```python
-import pprint 
-
 class SchemaGraph:
     
     def __init__(self):
@@ -706,15 +709,21 @@ class SchemaGraph:
         return self.__graph[Tupleset(tableName)]
     
     def tables(self):
+        return [ts.table for ts in self.__graph.keys()]
+    
+    def tuplesets(self):
         return self.__graph.keys()
         
     def getAdjacentTables(self, table, sort = False):
-        
+        return [ts.table for ts in self.getByTableName(table).keys()]
+
+    def getAdjacentTuplesets(self, table, sort = False):
         if not sort:
             return self.getByTableName(table).keys()
         else:
             # Sorting adjacents with non free tuple sets first
             return sorted(self.getByTableName(table).keys(),key=lambda ts : ts.isFreeTupleset() )
+    
         
     def isJNTSound(self,Ji):
         if len(Ji)<3:
@@ -745,7 +754,7 @@ class SchemaGraph:
 ```
 
 ```python
-def getSchemaGraph(dbname='dblp',user='imdb',password='imdb'):
+def getSchemaGraph(dbname='imdb',user='imdb',password='imdb'):
     #Output: A Schema Graph G  with the structure below:
     # G['node'] = edges
     # G['table'] = { 'foreign_table' : (direction, column, foreign_column) }
@@ -773,10 +782,6 @@ G
 ## Class Similarities
 
 ```python
-import copy
-from nltk.stem import WordNetLemmatizer
-from nltk.corpus import wordnet as wn
-
 class Similarities:
     
     def __init__(self, model, attributeHash,schemaGraph):
@@ -810,20 +815,39 @@ class Similarities:
     
     
     def embedding10_similarity(self,word,table,column='*',Emb='B'):
+        
         wnl = WordNetLemmatizer()
         
-        # Os sinônimos do EmbA também são utilizados por todos
-        sim_list = self.EmbA[table][column]
         
-        if column != '*':
+        if Emb == 'A':
+            sim_list = self.EmbA[table][column]            
         
-            if Emb == 'B':
+        elif Emb == 'B':
+            
+            sim_list = self.EmbA[table][column]   
+            
+            if column != '*':
                 sim_list |= self.EmbB[table][column]
-
-            elif Emb == 'C':
-                sim_list |= self.EmbC[table][column]
-
+                
+            for neighbourTable in G.getAdjacentTables(table):
+                
+                if neighbourTable not in self.attributeHash or neighbourTable not in model:
+                    continue
+                
+                sim_list |= self.EmbB[table][neighbourTable]   
+        
+        elif Emb == 'C':
+            
+            sim_list = self.EmbA[table][column]   
+            
+            if column != '*':
+                sim_list |= self.EmbB[table][column]
+        
+        else:
+            sim_list=[]
+        
         return wnl.lemmatize(word) in sim_list
+                
     
     
     def embedding_similarity(self,wordA,wordB):
@@ -913,9 +937,9 @@ class Similarities:
 
                 if tableB not in self.attributeHash or tableB not in model:
                     continue
-
+                
+                
                 self.EmbB[tableB][tableA] = self.EmbB[tableA][tableB] = self.__getSimilarSet( (tableA,tableB) )
-
         
 ```
 
@@ -1119,17 +1143,11 @@ G
 ```
 
 ```python
-M = RankedMq[0][0]
-M
+(M,score,valueScore,schemaScore) = RankedMq[0]
 ```
 
 ```python
-Gts = G.getMatchGraph(M)
-```
-
-```python
-from queue import deque
-def SingleCN(FM,Gts,TMax,showLog=False):  
+def SingleCN(FM,Gts,TMax=10,showLog=False):  
   
     if showLog:
         print('================================================================================\nSINGLE CN')
@@ -1155,20 +1173,17 @@ def SingleCN(FM,Gts,TMax,showLog=False):
         J = F.popleft()           
         tsu = J[-1]
         
-        sortedAdjacents = Gts.getAdjacentTables(tsu.table,sort = True)
+        sortedAdjacents = Gts.getAdjacentTuplesets(tsu.table,sort = True)
         
         if showLog:
             print('--------------------------------------------\nParctial CN')
             print('J ',J,'\n')
 
             print('\nAdjacents:')
-            pp(Gts.getAdjacentTables(tsu.table))
+            pp(Gts.getAdjacentTuplesets(tsu.table))
             
-            print('\nSorted Adjacents:')
-            pp(sortedAdjacents)
-            
-            print('F:')
-            pp(F)
+            #print('F:')
+            #pp(F)
         
         for tsv in sortedAdjacents:
             
@@ -1181,7 +1196,7 @@ def SingleCN(FM,Gts,TMax,showLog=False):
                 
                 Ji = J + [tsv]
                 
-                if (Ji not in F) and (len(Ji)<TMax) and (Gts.isJNTSound(Ji)):
+                if (Ji not in F) and (len(Ji)<=TMax) and (Gts.isJNTSound(Ji)):
                     
                     if showLog:
                         print('isSound=True')
@@ -1202,7 +1217,13 @@ def SingleCN(FM,Gts,TMax,showLog=False):
 ```
 
 ```python
-def MatchCN(G,Sq,Rq,RankedMq,TMax=5):    
+Gts = G.getMatchGraph(M)
+Cn = SingleCN(M,Gts,showLog=False)
+print(Cn)
+```
+
+```python
+def MatchCN(G,Sq,Rq,RankedMq,TMax=10):    
     Cns = []                        
     for  (M,score,schemascore,valuescore) in RankedMq:
 
@@ -1224,17 +1245,12 @@ def MatchCN(G,Sq,Rq,RankedMq,TMax=5):
 ```
 
 ```python
-
-```
-
-```python
 Cns = MatchCN(G,Sq,Rq,RankedMq)
 for (Cn,Gts,CnScore,schemascore,valuescore) in Cns:
     pp(Cn)
     
     x = Cn
     y = Gts
-    break
     print('\n')
 ```
 
@@ -1294,9 +1310,9 @@ def getSQLfromCN(Gts,Cn,contract=True):
     relationshipsText = ['('+a+'.__search_id'+','+b+'.__search_id'+')' for (a,b) in relationships]
     
     sqlText = 'SELECT \n '
-#     sqlText +=' ('+', '.join(tables_id)+') AS Tuples,\n '
-#     if len(relationships)>0:
-#         sqlText +='('+', '.join(relationshipsText)+') AS Relationships,\n '
+    sqlText +=' ('+', '.join(tables_id)+') AS Tuples,\n '
+    if len(relationships)>0:
+        sqlText +='('+', '.join(relationshipsText)+') AS Relationships,\n '
         
     sqlText += ' ,\n '.join(selected_attributes)
     
@@ -1333,15 +1349,229 @@ def getSQLfromCN(Gts,Cn,contract=True):
 ```
 
 ```python
-pp(x)
-```
-
-```python
-sql = getSQLfromCN(y,x,contract=True)
+sql = getSQLfromCN(Gts,Cn,contract=False)
 
 print(sql)
 ```
 
 ```python
 G
+```
+
+```python
+def getGoldenStandards(goldenStandardsFileName='golden_standards/imdb_martins',numQueries=11):
+    goldenStandards = {}
+    for i in range(1,numQueries+1):
+        filename = goldenStandardsFileName+'/'+str(i).zfill(3) +'.txt'
+        with open(filename) as f:
+
+            listOfTuples = []
+            Q = ()
+            for j, line in enumerate(f.readlines()):
+                
+                splitedLine = line.split('#')
+                
+                line_without_comment=splitedLine[0]
+                
+                if len(splitedLine)>1:
+                    comment_of_line=splitedLine[1]
+                
+                    if(j==2):
+                        query = comment_of_line
+                        Q = tuple(tokenizeString(query))
+                    
+                if line_without_comment:                    
+                    
+                    relevantResult = eval(line_without_comment)
+                    listOfTuples.append( relevantResult )
+            
+            goldenStandards[Q]=listOfTuples
+            
+    return goldenStandards
+
+```
+
+```python
+goldenStandards = getGoldenStandards()
+pp(goldenStandards)
+```
+
+```python
+def getGoldenMappings(goldenMappingsFileName='golden_mappings/golden_mappings_imdb_martins.txt'):
+    
+    goldenMappings = []
+    with open(goldenMappingsFileName) as f:
+        for j, line in enumerate(f.readlines()):
+
+            splitedLine = line.split('#')
+
+            line_without_comment=splitedLine[0]
+
+            if len(splitedLine)>1:
+                comment_of_line=splitedLine[1]
+
+            if line_without_comment:                    
+                tupleset = eval(line_without_comment)
+                goldenMappings.append(tupleset)
+
+    return goldenMappings
+
+    
+    
+goldenMappingsFileName='golden_mappings/golden_mappings_imdb_martins.txt'
+getGoldenMappings()
+```
+
+```python
+def evaluateCN(CnResult,goldenStandard):
+    '''
+    print('Verificar se são iguais:\n')
+    print('Result: \n',CnResult)
+    print('Golden Result: \n',goldenStandard)
+    '''
+    
+    tuplesOfCNResult =  set(CnResult[0])
+    
+    tuplesOfStandard =  set(goldenStandard[0])
+        
+    #Check if the CN result have all tuples in golden standard
+    if tuplesOfCNResult.issuperset(tuplesOfStandard) == False:
+        return False
+    
+    
+    relationshipsOfCNResult = CnResult[1]
+    
+    relationshipsOfStandard = goldenStandard[1]
+    
+    if len(relationshipsOfCNResult)!=len(relationshipsOfStandard):
+        #print('TAM OF JOIN PATHS DIFFERENT')
+        
+        #print('relationshipsOfCNResult')
+        #pp(relationshipsOfCNResult)
+        
+        #print('\relationshipsOfStandard')
+        #pp(relationshipsOfStandard)
+        
+        return False
+    
+    for goldenRelationship in relationshipsOfStandard:
+        
+        (A,B) = goldenRelationship
+        
+        if (A,B) not in relationshipsOfCNResult and (B,A) not in relationshipsOfCNResult:
+            return False
+        
+    return True
+
+
+def evaluanteResult(Result,Query):
+    
+    goldenStandard = goldenStandards[tuple(Query)]
+    
+    #print('RESULT')
+    #pp(Result)
+    
+    #print('STANDARD')
+    #pp(goldenStandard)
+    
+    for goldenRow in goldenStandard:
+
+        found = False
+
+        for row in Result:
+            if evaluateCN(row,goldenRow):
+                found = True
+
+        if not found:
+            return False
+        
+    return True
+            
+
+def normalizeResult(ResultFromDatabase,Description):
+    normalizedResult = []
+    
+    if Description[1].name=='relationships':
+        hasRelationships = True
+    else:
+        hasRelationships = False
+    
+    for row in ResultFromDatabase:       
+        if type(row[0]) == int:
+            tuples = [row[0]]
+        else:
+            tuples = eval(str(row[0]))
+        
+        if hasRelationships:
+            relationships = eval(row[1])
+            #print('RELATIONSHIPS')
+            #pp(relationships)
+            if type(relationships[0]) != int:
+                relationships = [eval(element) for element in relationships]
+            else:
+                relationships = [relationships]
+        else:
+            relationships=[]
+        
+        normalizedResult.append( (tuples,relationships) )
+    return normalizedResult
+```
+
+```python
+def getRelevantPosition(RankedCns,Q):
+    
+    position=0
+    nonEmptyPosition=0
+    
+    print(Q,'\n')
+    
+    for (Cn,Gts,score,schemascore,valuescore) in RankedCns:
+        
+        print('*',end='')
+        
+        #print('CN:\n')
+        #pp(Cn)
+        SQL1 = getSQLfromCN(Gts,Cn,contract=True)
+        SQL2 = getSQLfromCN(Gts,Cn,contract=False)
+        #print('\nSQL1\n')
+        #print(SQL1)
+        #print('\nSQL2\n')
+        #print(SQL2)
+        
+        def getRelevanceFromSQL(SQL,dbname='imdb',user='imdb',password='imdb'):
+            #print('RELAVANCE OF SQL:\n')
+            #print(SQL)
+            with psycopg2.connect(dbname=dbname,user=user,password=password) as conn:
+                with conn.cursor() as cur:
+                
+                    cur.execute(SQL)
+
+                    Results = cur.fetchall()
+                    Description = cur.description
+
+                    isEmpty = (len(Results)==0)
+
+                    NResults = normalizeResult(Results, Description)
+
+                    Relevance = evaluanteResult(NResults,Q)
+
+                    return (Relevance, isEmpty)
+        
+        (Relevance, isEmpty)=getRelevanceFromSQL(SQL1)
+        if Relevance==False:
+            (Relevance, isEmpty)=getRelevanceFromSQL(SQL2)
+    
+        position+=1
+        if not isEmpty:
+            nonEmptyPosition+=1
+        
+        if Relevance:
+            print()
+            return (position,nonEmptyPosition)
+    print()
+    return (-1,-1)
+```
+
+```python
+(pos,nonEmptyPos)=getRelevantPosition(Cns,Q)
 ```
