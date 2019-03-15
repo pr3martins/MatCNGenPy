@@ -1,19 +1,20 @@
----
-jupyter:
-  jupytext:
-    formats: md,ipynb,py
-    text_representation:
-      extension: .md
-      format_name: markdown
-      format_version: '1.0'
-      jupytext_version: 1.0.2
-  kernelspec:
-    display_name: MatCNGenpy
-    language: python
-    name: matcngenpy
----
+# -*- coding: utf-8 -*-
+# ---
+# jupyter:
+#   jupytext:
+#     formats: md,ipynb,py
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.3'
+#       jupytext_version: 1.0.2
+#   kernelspec:
+#     display_name: MatCNGenpy
+#     language: python
+#     name: matcngenpy
+# ---
 
-```python
+# +
 from pprint import pprint as pp
 import gc #garbage collector usado no createinvertedindex
 
@@ -43,23 +44,23 @@ from nltk.corpus import wordnet as wn
 
 
 from queue import deque
-```
 
-```python
+
+# -
+
 def tokenizeString(text):     
     return [word.strip(string.punctuation) 
             for word in text.lower().split() 
             if word not in stopwords.words('english') + ['will']]
-```
 
-```python
+
 def loadWordEmbeddingsModel(filename = "word_embeddings/word2vec/GoogleNews-vectors-negative300.bin"):
     model = KeyedVectors.load_word2vec_format(filename,
                                                        binary=True, limit=500000)
     return model
-```
 
-```python
+
+# +
 class BabelItemsIter:
     def __init__(self,babelhash):
         __slots__ = ('__babelhash')
@@ -79,9 +80,10 @@ class BabelItemsIter:
     #Apesar de que segundo o PEP 3106 (https://www.python.org/dev/peps/pep-3106/) recomenda que façamos
     # outros métodos, como and,eq,ne para permitir que a saída seja um set,
     # não estamos preocupados com isso aqui.
-```
 
-```python
+
+# -
+
 class BabelHash(dict):
     
     def __init__(self,babel={}):
@@ -155,9 +157,8 @@ class BabelHash(dict):
     
     def printBabel(self):
         print(self.__babel)
-```
 
-```python
+
 class WordHash(dict):      
         
     def __init__(self): 
@@ -186,9 +187,8 @@ class WordHash(dict):
     def __setitem__(self,word,value): 
         oldIAF,oldValue = dict.__getitem__(self,word)
         dict.__setitem__(self, word,  (oldIAF,value)  )
-```
 
-```python
+
 class DatabaseIter:
     def __init__(self,embeddingModel,dbname='imdb',user='imdb',password='imdb'):
         self.dbname=dbname
@@ -243,9 +243,8 @@ class DatabaseIter:
                                 yield table_name,ctid,column_name, word
 
                         printSkippedColumns=False
-```
 
-```python
+
 def createInvertedIndex(embeddingModel,dbname='imdb',user='imdb',password='imdb',showLog=True):
     #Output: wordHash (Term Index) with this structure below
     #map['word'] = [ 'table': ( {column} , ['ctid'] ) ]
@@ -286,9 +285,8 @@ def createInvertedIndex(embeddingModel,dbname='imdb',user='imdb',password='imdb'
     print ('INVERTED INDEX CREATED')
     gc.collect()
     return wh,ah
-```
 
-```python
+
 def processIAF(wordHash,attributeHash):
     
     total_attributes = sum([len(attribute) for attribute in attributeHash.values()])
@@ -299,9 +297,8 @@ def processIAF(wordHash,attributeHash):
         wordHash.setIAF(term,IAF)        
         
     print('IAF PROCESSED')
-```
 
-```python
+
 def processNormsOfAttributes(wordHash,attributeHash):    
     for word in wordHash:
         for table in wordHash[word]:
@@ -320,11 +317,10 @@ def processNormsOfAttributes(wordHash,attributeHash):
                 attributeHash[table][column]=(Norm,numDistinctWords,numWords,maxFrequency)
                 
     print ('NORMS OF ATTRIBUTES PROCESSED')
-```
 
-## Class Tupleset
 
-```python
+# ## Class Tupleset
+
 class Tupleset:
    
     def __init__(self, table, predicates = None, tuples = None):            
@@ -464,9 +460,9 @@ class Tupleset:
     
     def __hash__(self):
         return hash(frozenset(self.__repr__()))
-```
 
-```python
+
+# +
 def TSFind(Q,wordHash):
     #Input:  A keyword query Q=[k1, k2, . . . , km]
     #Output: Set of non-free and non-empty tuple-sets Rq
@@ -586,9 +582,10 @@ def TSInterMartins(P):
             
             TSInterMartins(P)
             break
-```
 
-```python
+
+# -
+
 def getQuerySets(filename='querysets/queryset_imdb_martins_new.txt'):
     QuerySet = []
     with open(filename,encoding='utf-8-sig') as f:
@@ -601,11 +598,10 @@ def getQuerySets(filename='querysets/queryset_imdb_martins_new.txt'):
             
             QuerySet.append(Q)
     return QuerySet
-```
 
-## class SchemaGraph
 
-```python
+# ## class SchemaGraph
+
 class SchemaGraph:
     
     def __init__(self):
@@ -697,9 +693,8 @@ class SchemaGraph:
     
     def __str__(self):
         return repr(self.__graph)
-```
 
-```python
+
 def getSchemaGraph(dbname='imdb',user='imdb',password='imdb'):
     #Output: A Schema Graph G  with the structure below:
     # G['node'] = edges
@@ -717,11 +712,10 @@ def getSchemaGraph(dbname='imdb',user='imdb',password='imdb'):
                     G.addRelationship(table,column,foreign_table,foreign_column)  
                 print ('SCHEMA CREATED')          
     return G
-```
 
-## Class Similarities
 
-```python
+# ## Class Similarities
+
 class Similarities:
     
     def __init__(self, model, attributeHash,schemaGraph):
@@ -879,9 +873,7 @@ class Similarities:
                 
                 self.EmbB[tableB][tableA] = self.EmbB[tableA][tableB] = self.__getSimilarSet( (tableA,tableB) )
         
-```
 
-```python
 def SchSFind(Q,attributeHash,similarities,threshold=0.8, 
              sim_args={}):    
     S = set()
@@ -901,9 +893,8 @@ def SchSFind(Q,attributeHash,similarities,threshold=0.8,
                     S.add(ts)
                     
     return S
-```
 
-```python
+
 def MinimalCover(MC, Q):
     #Input:  A subset MC (Match Candidate) to be checked as total and minimal cover
     #Output: If the match candidate is a TOTAL and MINIMAL cover
@@ -925,9 +916,9 @@ def MinimalCover(MC, Q):
     #print('MC({},{}) = {}'.format(MC,Q,isTotal))
     
     return isTotal
-```
 
-```python
+
+# +
 def QMGen(Q,Rq):
     #Input:  A keyword query Q, The set of non-empty non-free tuple-sets Rq
     #Output: The set Mq of query matches for Q
@@ -970,9 +961,10 @@ def MInter(M):
             return MInter(M)
         
     return M   
-```
 
-```python
+
+# -
+
 def QMRank(Mq, wordHash,attributeHash,similarities):
     Ranking = []  
 
@@ -1036,9 +1028,7 @@ def QMRank(Mq, wordHash,attributeHash,similarities):
                 
     return sorted(Ranking,key=lambda x: x[1],reverse=True)
                 
-```
 
-```python
 def SingleCN(FM,Gts,TMax=10,showLog=False):  
   
     if showLog:
@@ -1106,9 +1096,8 @@ def SingleCN(FM,Gts,TMax=10,showLog=False):
                         return Ji
                     else:
                         F.append(Ji)
-```
 
-```python
+
 def MatchCN(G,RankedMq,TMax=10):    
     Cns = []                        
     for  (M,score,schemascore,valuescore) in RankedMq:
@@ -1128,11 +1117,10 @@ def MatchCN(G,RankedMq,TMax=10):
     RankedCns=sorted(Cns,key=lambda x: x[3],reverse=True)
     
     return RankedCns
-```
 
-## getSQLfromCN
 
-```python
+# ## getSQLfromCN
+
 def getSQLfromCN(Gts,Cn,contract=True):
     selected_attributes = [] 
     hashTables = {}
@@ -1222,9 +1210,8 @@ def getSQLfromCN(Gts,Cn,contract=True):
     '''    
     #print('SQL:\n',sql)
     return sqlText
-```
 
-```python
+
 def getGoldenStandards(goldenStandardsFileName='golden_standards/imdb_martins',numQueries=11):
     goldenStandards = {}
     for i in range(1,numQueries+1):
@@ -1255,9 +1242,8 @@ def getGoldenStandards(goldenStandardsFileName='golden_standards/imdb_martins',n
             
     return goldenStandards
 
-```
 
-```python
+
 def getGoldenMappings(goldenMappingsFileName='golden_mappings/golden_mappings_imdb_martins.txt'):
     
     goldenMappings = []
@@ -1276,9 +1262,9 @@ def getGoldenMappings(goldenMappingsFileName='golden_mappings/golden_mappings_im
                 goldenMappings.append(tupleset)
 
     return goldenMappings
-```
 
-```python
+
+# +
 def evaluateCN(CnResult,goldenStandard):
     '''
     print('Verificar se são iguais:\n')
@@ -1371,9 +1357,10 @@ def normalizeResult(ResultFromDatabase,Description):
         
         normalizedResult.append( (tuples,relationships) )
     return normalizedResult
-```
 
-```python
+
+# -
+
 def getRelevantPosition(RankedCns,Q,goldenStandards):
     
     position=0
@@ -1426,9 +1413,9 @@ def getRelevantPosition(RankedCns,Q,goldenStandards):
             return (position,nonEmptyPosition)
     print()
     return (-1,-1)
-```
 
-```python
+
+# +
 def preProcessing(emb_file="word_embeddings/word2vec/GoogleNews-vectors-negative300.bin"):
     
     wordEmbeddingsModel=loadWordEmbeddingsModel(emb_file)
@@ -1440,13 +1427,11 @@ def preProcessing(emb_file="word_embeddings/word2vec/GoogleNews-vectors-negative
     return (wordHash,attributeHash,wordEmbeddingsModel)
 
 
-```
+# -
 
-```python
 wordHash,attributeHash,wordEmbeddingsModel=preProcessing()
-```
 
-```python
+
 def keywordSearch (wordHash,attributeHash,wordEmbeddingsModel,sim_args={},
          showLog=False,
          SimilarityThreshold=0.9,
@@ -1575,27 +1560,16 @@ def keywordSearch (wordHash,attributeHash,wordEmbeddingsModel,sim_args={},
 ==========================================================================')
     FN=goldenMappings
     return (relevantPositions,nonEmptyRelevantPositions,listSkippedCN,TP,FP,FN)
-```
 
-```python
 Result = keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
                        evaluation=False,showLog=True)
-```
 
-```python
 (relevantPositions,nonEmptyRelevantPositions,listSkippedCN,TP,FP,FN) = Result
-```
 
-```python
 x = getQuerySets()
 for i,Q in enumerate(x):
     print('{} Query:{}\nrelevant:{}\nnon-empty relevant:{}\nskippedCN:{}\nTP:{}\nFP:{}\nFN:{}\n\n'.format(i,Q,relevantPositions,nonEmptyRelevantPositions,listSkippedCN,TP,FP,FN))
-```
 
-```python
 similarities = Similarities(wordEmbeddingsModel,attributeHash,getSchemaGraph())
-```
 
-```python
 similarities.EmbB
-```
