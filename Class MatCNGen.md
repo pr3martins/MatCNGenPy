@@ -263,7 +263,7 @@ def createInvertedIndex(embeddingModel,dbname='imdb',user='imdb',password='imdb'
     
     for table,ctid,column,word in DatabaseIter(embeddingModel):        
         wh.addMapping(word,table,column,ctid)
-        
+                
         ah.setdefault(table,{}).setdefault(column,{}).setdefault(word,1)
         ah[table][column][word]+=1
         
@@ -663,12 +663,20 @@ class SchemaGraph:
     def getAdjacentTables(self, table, sort = False):
         return [ts.table for ts in self.getByTableName(table).keys()]
 
-    def getAdjacentTuplesets(self, table, sort = False):
+    def getAdjacentTuplesets(self, table, sort = False, tuplesetSortingOrder = None):
         if not sort:
             return self.getByTableName(table).keys()
         else:
+            
+            def sortingFunction(ts):
+                if ts.isFreeTupleset() == False:
+                    return 0
+                if tuplesetSortingOrder is None:
+                    return 1
+                return tuplesetSortingOrder[ts.table]                
+            
             # Sorting adjacents with non free tuple sets first
-            return sorted(self.getByTableName(table).keys(),key=lambda ts : ts.isFreeTupleset() )
+            return sorted(self.getByTableName(table).keys(),key=sortingFunction)
     
         
     def isJNTSound(self,Ji):
@@ -1039,7 +1047,7 @@ def QMRank(Mq, wordHash,attributeHash,similarities):
 ```
 
 ```python
-def SingleCN(FM,Gts,TMax=10,showLog=False):  
+def SingleCN(FM,Gts,TMax=10,showLog=False,tuplesetSortingOrder = None):  
   
     if showLog:
         print('================================================================================\nSINGLE CN')
@@ -1065,7 +1073,9 @@ def SingleCN(FM,Gts,TMax=10,showLog=False):
         J = F.popleft()           
         tsu = J[-1]
         
-        sortedAdjacents = Gts.getAdjacentTuplesets(tsu.table,sort = True)
+        
+        
+        sortedAdjacents = Gts.getAdjacentTuplesets(tsu.table,sort = True, tuplesetSortingOrder=tuplesetSortingOrder)
         
         if showLog:
             print('--------------------------------------------\nParctial CN')
@@ -1109,12 +1119,16 @@ def SingleCN(FM,Gts,TMax=10,showLog=False):
 ```
 
 ```python
-def MatchCN(G,RankedMq,TMax=10):    
-    Cns = []                        
+def MatchCN(attributeHash,G,RankedMq,TMax=10):    
+    Cns = []    
+    
+    
+    tuplesetSortingOrder = {table : 1/sum([Norm for (Norm,numDistinctWords,numWords,maxFrequency) in attributeHash[table].values()]) for table in attributeHash}
+    
     for  (M,score,schemascore,valuescore) in RankedMq:
 
         Gts = G.getMatchGraph(M)
-        Cn = SingleCN(M,Gts,TMax=TMax)
+        Cn = SingleCN(M,Gts,TMax=TMax,tuplesetSortingOrder=tuplesetSortingOrder)
         if(Cn is not None):
             
             
@@ -1133,7 +1147,7 @@ def MatchCN(G,RankedMq,TMax=10):
 ## getSQLfromCN
 
 ```python
-def getSQLfromCN(Gts,Cn,contract=True):
+def getSQLfromCN(Gts,Cn,contract=True,showEvaluationFields=True,rowslimit=1000):
     selected_attributes = [] 
     hashTables = {}
     conditions=[]
@@ -1186,9 +1200,11 @@ def getSQLfromCN(Gts,Cn,contract=True):
     relationshipsText = ['('+a+'.__search_id'+','+b+'.__search_id'+')' for (a,b) in relationships]
     
     sqlText = 'SELECT \n '
-    sqlText +=' ('+', '.join(tables_id)+') AS Tuples,\n '
-    if len(relationships)>0:
-        sqlText +='('+', '.join(relationshipsText)+') AS Relationships,\n '
+    
+    if showEvaluationFields:    
+        sqlText +=' ('+', '.join(tables_id)+') AS Tuples,\n '
+        if len(relationships)>0:
+            sqlText +='('+', '.join(relationshipsText)+') AS Relationships,\n '
         
     sqlText += ' ,\n '.join(selected_attributes)
     
@@ -1198,7 +1214,7 @@ def getSQLfromCN(Gts,Cn,contract=True):
     
     # Considerando que todas as pequisas tem ao menos um value term
     if  len(conditions)==0:
-        sqlText+= ' 1=2'
+        sqlText+= ' FALSE'
         return sqlText
     
     sqlText +='\n AND '.join(joincondiditions)
@@ -1209,7 +1225,7 @@ def getSQLfromCN(Gts,Cn,contract=True):
     
     
     #Considerando que nenhuma consulta tem mais de 1000 linhas no resultado
-    sqlText += '\n LIMIT 1000'
+    sqlText += '\n LIMIT ' + str(rowslimit)
     
     sqlText += ';'
     '''
@@ -1447,6 +1463,35 @@ wordHash,attributeHash,wordEmbeddingsModel=preProcessing()
 ```
 
 ```python
+def execSQL (SQL,dbname='imdb',user='imdb',password='imdb'):
+    #print('RELAVANCE OF SQL:\n')
+    #print(SQL)
+    from prettytable import PrettyTable
+
+    
+    with psycopg2.connect(dbname=dbname,user=user,password=password) as conn:
+        with conn.cursor() as cur:
+
+            cur.execute(SQL)
+
+            #Results = cur.fetchall()
+            #Description = cur.description
+
+            #x.field_names = Description
+
+            
+            if cur.description:  
+                table = PrettyTable()
+                table.field_names = [ '{}{}'.format(i,col[0]) for i,col in enumerate(cur.description)]
+                for row in cur.fetchall():
+                    table.add_row(row)
+
+            print(table)
+                        
+            return cur.rowcount>0
+```
+
+```python
 def keywordSearch (wordHash,attributeHash,wordEmbeddingsModel,sim_args={},
          showLog=False,
          SimilarityThreshold=0.9,
@@ -1530,7 +1575,7 @@ def keywordSearch (wordHash,attributeHash,wordEmbeddingsModel,sim_args={},
         
         print('GENERATING CANDIDATE NETWORKS')     
         
-        RankedCns = MatchCN(G,topKMq,TMax=TMax)
+        RankedCns = MatchCN(attributeHash,G,topKMq,TMax=TMax)
         
         listSkippedCN.append(numSkippedCNs)
         
@@ -1544,12 +1589,24 @@ def keywordSearch (wordHash,attributeHash,wordEmbeddingsModel,sim_args={},
                       '\n|Cn|: ',"%02d (Considerado para o Total Score)" % len(Cn),
                       '\nTotal Score: ',"%.8f" % score)
                 pp(Cn)
+
+                
                 print()
-                print(getSQLfromCN(Gts,Cn))
-                print('\nsem arvore')
-                print(getSQLfromCN(Gts,Cn,contract=False))
-                print('----------------------------------------------------------------------\n')
-        
+                print('\nCONTRACTED')
+                SQL1= getSQLfromCN(Gts,Cn,showEvaluationFields=False,rowslimit=10)
+                print(SQL1)
+                
+                if (execSQL(SQL1) == False):
+                
+                    print('\nUNCONTRACTED')
+                    
+                    SQL2=getSQLfromCN(Gts,Cn,contract=False,showEvaluationFields=False,rowslimit=10)
+                    print(SQL2)
+                    execSQL(SQL2)
+                    
+                    
+                    print('----------------------------------------------------------------------\n')
+
         print('CHECKING RELEVANCE')
         
         if(evaluation):
@@ -1583,6 +1640,32 @@ Result = keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
 ```
 
 ```python
+execSQL('''SELECT 
+ t0.name ,
+ t2.title ,
+ t4.name
+FROM
+ casting t1,
+ casting t3,
+ person t0,
+ person t4,
+ movie t2
+WHERE
+ t1.person_id = t0.id
+ AND t2.id = t1.movie_id
+ AND t3.movie_id = t2.id
+ AND t4.id = t3.person_id
+
+ AND CAST(t0.name AS VARCHAR) ILIKE '%wachowski%'
+ AND CAST(t2.title AS VARCHAR) ILIKE '%matrix%'
+ AND CAST(t4.name AS VARCHAR) ILIKE '%reeves%' limit 5;''')
+```
+
+```python
+attributeHash
+```
+
+```python
 (relevantPositions,nonEmptyRelevantPositions,listSkippedCN,TP,FP,FN) = Result
 ```
 
@@ -1597,5 +1680,5 @@ similarities = Similarities(wordEmbeddingsModel,attributeHash,getSchemaGraph())
 ```
 
 ```python
-similarities.EmbB
+attributeHash
 ```
