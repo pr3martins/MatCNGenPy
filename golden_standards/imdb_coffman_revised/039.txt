@@ -1,0 +1,6 @@
+# [reference standard]
+# imdb2009
+# russell crowe gladiator char_name
+# ([39110083, 3990740, 43898011], [(3990740, 39110083), (3990740, 43898011)]) # Maximus
+# The standard is wrong. There is no tuple from table char_name in the standard
+([39110083, 3990740, 43898011, 21380533], [(3990740, 39110083), (3990740, 43898011), (3990740, 21380533)]) # Maximus

@@ -65,7 +65,7 @@ def showSimilarities(wordA,wordB):
 ```
 
 ```python
-showSimilarities('casting','actor')
+showSimilarities('person','movie')
 ```
 
 ```python

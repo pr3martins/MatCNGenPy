@@ -14,6 +14,21 @@
 #     name: matcngenpy
 # ---
 
+DBNAME = 'imdb_subset_coffman'
+DBUSER = 'imdb'
+DBPASS = 'imdb'
+EMBEDDINGFILE = "word_embeddings/word2vec/GoogleNews-vectors-negative300.bin"
+QUERYSETFILE ='querysets/queryset_imdb_qualifciacao_experimento.txt'
+GONDELSTANDARDS ='golden_standards/imdb_coffman_revised'
+GOLDENMAPPINGS ='golden_mappings/golden_mappings_imdb_martins.txt'
+
+
+def validSchemaElement(text,embmodel=set()): 
+    if 'id' in text or 'index' in text or 'code' in text:
+        return False
+    return True    
+
+
 # +
 from pprint import pprint as pp
 import gc #garbage collector usado no createinvertedindex
@@ -36,25 +51,19 @@ import pprint
 import copy
 from nltk.stem import WordNetLemmatizer
 from nltk.stem import PorterStemmer
-
-
-
 from nltk.corpus import wordnet as wn
-
-
-
 from queue import deque
 
 
 # -
 
 def tokenizeString(text):     
-    return [word.strip(string.punctuation) 
+    return [word.strip(string.punctuation)
             for word in text.lower().split() 
-            if word not in stopwords.words('english') + ['will']]
+            if word not in stopwords.words('english') or word == 'will']
 
 
-def loadWordEmbeddingsModel(filename = "word_embeddings/word2vec/GoogleNews-vectors-negative300.bin"):
+def loadWordEmbeddingsModel(filename = EMBEDDINGFILE):
     model = KeyedVectors.load_word2vec_format(filename,
                                                        binary=True, limit=500000)
     return model
@@ -190,7 +199,7 @@ class WordHash(dict):
 
 
 class DatabaseIter:
-    def __init__(self,embeddingModel,dbname='imdb',user='imdb',password='imdb'):
+    def __init__(self,embeddingModel,dbname=DBNAME,user=DBUSER,password=DBPASS):
         self.dbname=dbname
         self.user=user
         self.password =password
@@ -214,38 +223,50 @@ class DatabaseIter:
                 for table in tables:
                     table_name = table[0]
 
-                    if table_name not in self.embeddingModel:
+                    if not validSchemaElement(table_name,embmodel=self.embeddingModel):
                         print('TABLE ',table_name, 'SKIPPED')
                         continue
 
-                    print('INDEXING TABLE ',table_name)
+                    print('\nINDEXING TABLE ',table_name)
 
                     #Get all tuples for this tablename
                     cur.execute(
-                        sql.SQL("SELECT ctid, * FROM {};").format(sql.Identifier(table_name))
+                        sql.SQL("SELECT * FROM {} LIMIT 1;").format(sql.Identifier(table_name))
                         #NOTE: sql.SQL is needed to specify this parameter as table name (can't be passed as execute second parameter)
                     )
-
-                    printSkippedColumns = True
-
-                    for row in cur.fetchall(): 
+                    
+                    indexable_columns = []
+                    
+                    for column in range(1,len(cur.fetchone())):
+                        column_name = cur.description[column][0]
+                        if not validSchemaElement(column_name,embmodel=self.embeddingModel):
+                            print('\tCOLUMN ',column_name,' SKIPPED')
+                        else:
+                            indexable_columns.append(sql.Identifier(column_name))
+                            print('\tCOLUMN ',column_name,' NOT SKIPPED')
+                    
+                    if len(indexable_columns)==0:
+                        continue
+                                
+                    #Get all tuples for this tablename
+                    cur.execute(
+                        sql.SQL("SELECT ctid, {} FROM {};").format(sql.SQL(', ').join(indexable_columns)
+                                                                   ,sql.Identifier(table_name))
+                        #NOTE: sql.SQL is needed to specify this parameter as table name (can't be passed as execute second parameter)
+                    )
+                                       
+                    for i,row in enumerate(cur.fetchall()): 
+                        ctid = row[0]
                         for column in range(1,len(row)):
-                            column_name = cur.description[column][0] 
-
-                            if column_name not in self.embeddingModel or column_name=='id':
-                                if printSkippedColumns:
-                                    print('\tCOLUMN ',column_name,' SKIPPED')
-                                continue
-
-                            ctid = row[0]
-
+                            column_name = cur.description[column][0]
                             for word in tokenizeString( str(row[column]) ):
                                 yield table_name,ctid,column_name, word
+                        
+                        if i%100000==1:
+                            print('*',end='')
 
-                        printSkippedColumns=False
 
-
-def createInvertedIndex(embeddingModel,dbname='imdb',user='imdb',password='imdb',showLog=True):
+def createInvertedIndex(embeddingModel,showLog=True):
     #Output: wordHash (Term Index) with this structure below
     #map['word'] = [ 'table': ( {column} , ['ctid'] ) ]
 
@@ -324,7 +345,6 @@ def processNormsOfAttributes(wordHash,attributeHash):
 class Tupleset:
    
     def __init__(self, table, predicates = None, tuples = None):            
-        
         self.table = table
         self.predicates= predicates if predicates is not None else {}
         self.tuples= tuples if tuples is not None else set()
@@ -426,6 +446,18 @@ class Tupleset:
             if len(schemaWords)>0:
                 return False
         return True
+    
+    def clearSchemaMappings(self): 
+        attributes_to_remove=[]
+        for attribute, (schemaWords, valueWords ) in self.predicates.items():
+            if len(valueWords) == 0:
+                attributes_to_remove.append(attribute)
+                continue
+            else:
+                schemaWords.clear()
+        for attribute in attributes_to_remove:
+            del self.predicates[attribute]            
+                
         
     def hasTuples(self):
         return len(self.tuples)>0
@@ -480,8 +512,9 @@ def TSFind(Q,wordHash):
             continue
         
         for table in wordHash[keyword]:
+            if table=='movie_info' or table=='cast_info':
+                continue
             for (attribute,ctids) in wordHash[keyword][table].items():
-                
                 ts = Tupleset(table)
                 ts.addValueMapping(keyword,attribute)
                 ts.addTuples(ctids)                
@@ -586,7 +619,7 @@ def TSInterMartins(P):
 
 # -
 
-def getQuerySets(filename='querysets/queryset_imdb_martins_new.txt'):
+def getQuerySets(filename=QUERYSETFILE):
     QuerySet = []
     with open(filename,encoding='utf-8-sig') as f:
         for line in f.readlines():
@@ -669,6 +702,10 @@ class SchemaGraph:
                     return 0
                 if tuplesetSortingOrder is None:
                     return 1
+                
+                if ts.table not in tuplesetSortingOrder:
+                    return 1                   
+
                 return tuplesetSortingOrder[ts.table]                
             
             # Sorting adjacents with non free tuple sets first
@@ -703,7 +740,7 @@ class SchemaGraph:
         return repr(self.__graph)
 
 
-def getSchemaGraph(dbname='imdb',user='imdb',password='imdb'):
+def getSchemaGraph(dbname=DBNAME,user=DBUSER,password=DBPASS):
     #Output: A Schema Graph G  with the structure below:
     # G['node'] = edges
     # G['table'] = { 'foreign_table' : (direction, column, foreign_column) }
@@ -724,30 +761,49 @@ def getSchemaGraph(dbname='imdb',user='imdb',password='imdb'):
 
 # ## Class Similarities
 
-class Similarities:
-    
-    def __init__(self, model, attributeHash,schemaGraph):
-
+class Similarities:    
+    def __init__(self, model, attributeHash,schemaGraph,
+                usePathSim=True,useWupSim=True,
+                useJaccardSim=True,useEmbSim=False,
+                useEmb10Sim=True,Emb10SimType='B',
+                ):
+        
         self.model = model
         self.attributeHash = attributeHash
         self.schemaGraph = schemaGraph
-        self.porter = PorterStemmer()
         
+        self.usePathSim=usePathSim, 
+        self.useWupSim=useWupSim,
+        self.useJaccardSim=useJaccardSim,
+        self.useEmbSim=useEmbSim,
+        self.useEmb10Sim=useEmb10Sim  
+        self.Emb10SimType=Emb10SimType
         
+        #self.porter = PorterStemmer()
+        self.lemmatizer = WordNetLemmatizer()
         self.loadEmbeddingHashes()     
     
-    def wordnet_similarity(self,wordA,wordB):
+    def path_similarity(self,wordA,wordB):
+        A = set(wn.synsets(wordA))
+        B = set(wn.synsets(wordB))
+
+        pathSimilarities = [0]
+        
+        for (sense1,sense2) in itertools.product(A,B):        
+            pathSimilarities.append(wn.path_similarity(sense1,sense2) or 0)
+            
+        return max(pathSimilarities)
+    
+    def wup_similarity(self,wordA,wordB):
         A = set(wn.synsets(wordA))
         B = set(wn.synsets(wordB))
 
         wupSimilarities = [0]
-        pathSimilarities = [0]
         
         for (sense1,sense2) in itertools.product(A,B):        
             wupSimilarities.append(wn.wup_similarity(sense1,sense2) or 0)
-            pathSimilarities.append(wn.path_similarity(sense1,sense2) or 0)
             
-        return max(max(wupSimilarities),max(pathSimilarities))
+        return max(wupSimilarities)
 
     def jaccard_similarity(self,wordA,wordB):
 
@@ -759,22 +815,24 @@ class Similarities:
     
     def embedding10_similarity(self,word,table,column='*',Emb='B'):      
         
+        if table not in self.EmbA or column not in self.EmbA[table]:
+            return False
+        
         if Emb == 'A':
-            sim_list = self.EmbA[table][column]            
+            sim_list = self.EmbA[table][column]
         
         elif Emb == 'B':
-            
             sim_list = self.EmbA[table][column]   
             
             if column != '*':
                 sim_list |= self.EmbB[table][column]
-                
-            for neighbourTable in self.schemaGraph.getAdjacentTables(table):
-                
-                if neighbourTable not in self.attributeHash or neighbourTable not in self.model:
-                    continue
-                
-                sim_list |= self.EmbB[table][neighbourTable]   
+            else:                
+                for neighbourTable in self.schemaGraph.getAdjacentTables(table):
+
+                    if neighbourTable not in self.model:
+                        continue
+
+                    sim_list |= self.EmbB[table][neighbourTable]   
         
         elif Emb == 'C':
             
@@ -788,7 +846,8 @@ class Similarities:
         
         
         #print('sim({},{}.{}) = {}'.format(word,table,column,sim_list))        
-        return self.porter.stem(word) in sim_list
+        #return self.porter.stem(word) in sim_list
+        return self.lemmatizer.lemmatize(word) in sim_list
                 
     
     
@@ -798,38 +857,34 @@ class Similarities:
         return self.model.similarity(wordA,wordB)
     
     
-    def word_similarity(self,word,table,column = '*',
-                    wn_sim=True, 
-                    jaccard_sim=True,
-                    emb_sim=False,
-                    emb10_sim='B'):
+    def word_similarity(self,word,table,column = '*'):
         sim_list=[0]
     
         if column == '*':
             schema_term = table
         else:
             schema_term = column
+            
+        if self.usePathSim:
+            sim_list.append( self.path_similarity(schema_term,word) )
+            
+        if self.useWupSim:
+            sim_list.append( self.wup_similarity(schema_term,word) )
 
-        if wn_sim:
-            sim_list.append( self.wordnet_similarity(schema_term,word) )
-
-        if jaccard_sim:
+        if self.useJaccardSim:
             sim_list.append( self.jaccard_similarity(schema_term,word) )
 
-        if emb_sim:
+        if self.useEmbSim:
             sim_list.append( self.embedding_similarity(schema_term,word) )
 
         sim = max(sim_list) 
         
-        if emb10_sim:
-            if self.embedding10_similarity(word,table,column,emb10_sim):
+        if self.useEmb10Sim:
+            if self.embedding10_similarity(word,table,column,self.Emb10SimType):
                 if len(sim_list)==1:
                     sim=1
             else:
-                sim=0
-                
-        
-        
+                sim=0     
         return sim    
     
     def __getSimilarSet(self,word, inputType = 'word'):
@@ -838,7 +893,8 @@ class Similarities:
         else:
             sim_list = self.model.most_similar(word) 
         
-        return  {self.porter.stem(word.lower()) for word,sim in sim_list}
+        #return  {self.porter.stem(word.lower()) for word,sim in sim_list}
+        return  {self.lemmatizer.lemmatize(word.lower()) for word,sim in sim_list}
     
     def loadEmbeddingHashes(self,weight=0.5):
         
@@ -875,15 +931,13 @@ class Similarities:
 
             for tableB in self.schemaGraph.getAdjacentTables(tableA):
 
-                if tableB not in self.attributeHash or tableB not in self.model:
+                if tableB not in self.model:
                     continue
                 
-                
-                self.EmbB[tableB][tableA] = self.EmbB[tableA][tableB] = self.__getSimilarSet( (tableA,tableB) )
+                self.EmbB[tableA][tableB] = self.__getSimilarSet( (tableA,tableB) )
         
 
-def SchSFind(Q,attributeHash,similarities,threshold=0.8, 
-             sim_args={}):    
+def SchSFind(Q,attributeHash,similarities,threshold=0.8):    
     S = set()
     
     for keyword in Q:
@@ -893,7 +947,7 @@ def SchSFind(Q,attributeHash,similarities,threshold=0.8,
                 if(attribute=='id'):
                     continue
                 
-                sim = similarities.word_similarity(keyword,table,attribute,**sim_args)
+                sim = similarities.word_similarity(keyword,table,attribute)
                 
                 if sim >= threshold:
                     ts = Tupleset(table)
@@ -927,7 +981,7 @@ def MinimalCover(MC, Q):
 
 
 # +
-def QMGen(Q,Rq):
+def QMGen(Q,Rq, TMaxQM = 5):
     #Input:  A keyword query Q, The set of non-empty non-free tuple-sets Rq
     #Output: The set Mq of query matches for Q
     
@@ -939,7 +993,7 @@ def QMGen(Q,Rq):
     '''
     
     Mq = []
-    for i in range(1,len(Q)+1):
+    for i in range(1,min(len(Q),TMaxQM)+1):
         for subset in itertools.combinations(Rq,i):            
             if(MinimalCover(subset,Q)):
 #                 print('----------------------------------------------\nM')
@@ -954,8 +1008,7 @@ def QMGen(Q,Rq):
                 
     return Mq
 
-def MInter(M):  
-    somethingChanged = False    
+def MInter(M):    
     for tsA, tsB  in itertools.combinations(M,2):
         
         tsX = tsA.union(tsB, projectionOnly = True)
@@ -973,7 +1026,7 @@ def MInter(M):
 
 # -
 
-def QMRank(Mq, wordHash,attributeHash,similarities):
+def QMRank(Q, Mq,wordHash,attributeHash,similarities,showLog=False):
     Ranking = []  
 
     for M in Mq:
@@ -986,24 +1039,37 @@ def QMRank(Mq, wordHash,attributeHash,similarities):
         thereIsValueTerms = False
         
         for ts in M:
-            #print(ts)
-            for table, attribute, valueWords in ts.getValueMappings():
-                #print('t{} a{} v{}'.format(table,attribute,valueWords))             
+            
+            if showLog:
+                print(ts)
                 
+            for table, attribute, valueWords in ts.getValueMappings():
+                                
                 (Norm,numDistinctWords,numWords,maxFrequency) = attributeHash[table][attribute]                
                 wsum = 0
-                for term in valueWords:
                 
-                    #print('t{} a{} vt{}'.format(table,attribute,term))
+                
+                if showLog:
+                    print('Norm: {}\nMaxFrequency {}\n'.format(Norm,maxFrequency))
+                
+                
+                for term in valueWords:    
                 
                     IAF = wordHash.getIAF(term)
                     
                     frequency = len(wordHash.getMappings(term,table,attribute))
-                    TF = frequency/maxFrequency
+                    TF = (frequency/maxFrequency)
                     wsum = wsum + TF*IAF
-    
+                    if showLog:
+                        print('- Term: {}\n  Frequency:{}\n  TF:{}\n  IAF:{}\n'.format(term,frequency,TF,IAF))
+                    
                     thereIsValueTerms = True
-                
+                    
+                '''
+                for i in range(len(Q)-1):
+                    if Q[i] in valueWords and Q[i+1] in valueWords:
+                        wsum = wsum * 3
+                '''        
                 cos = wsum/Norm
                 valueProd *= cos
                 
@@ -1013,6 +1079,10 @@ def QMRank(Mq, wordHash,attributeHash,similarities):
                 for term in schemaWords:
                     sim = similarities.word_similarity(term,table,attribute)
                     schemasum += sim
+                    
+                    if showLog:
+                        print('- Term: {}\n  Sim:{}\n'.format(term,sim))
+                    
                     
                     thereIsSchemaTerms = True
                     
@@ -1037,7 +1107,7 @@ def QMRank(Mq, wordHash,attributeHash,similarities):
     return sorted(Ranking,key=lambda x: x[1],reverse=True)
                 
 
-def SingleCN(FM,Gts,TMax=10,showLog=False,tuplesetSortingOrder = None):  
+def SingleCN(FM,G,TMax=10,showLog=False,tuplesetSortingOrder = None):  
   
     if showLog:
         print('================================================================================\nSINGLE CN')
@@ -1049,21 +1119,24 @@ def SingleCN(FM,Gts,TMax=10,showLog=False,tuplesetSortingOrder = None):
         #pp(Gts)
         #print('\n\n')
     
+    for tsX in FM:
+        tsX.clearSchemaMappings()
+    
+    Gts = G.getMatchGraph(FM)
+    
     F = deque()
 
     first_element = list(FM)[0]
     J = [first_element]
     
     if len(FM)==1:
-        return J
+        return (J,Gts)
     
     F.append(J)
     
     while F:
         J = F.popleft()           
-        tsu = J[-1]
-        
-        
+        tsu = J[-1]        
         
         sortedAdjacents = Gts.getAdjacentTuplesets(tsu.table,sort = True, tuplesetSortingOrder=tuplesetSortingOrder)
         
@@ -1084,7 +1157,7 @@ def SingleCN(FM,Gts,TMax=10,showLog=False,tuplesetSortingOrder = None):
                 pp(tsv)
                 print()
 
-            if (tsv.isFreeTupleset()) or (tsv not in J):
+            if (tsv not in FM) or (tsv not in J):
                 
                 Ji = J + [tsv]
                 
@@ -1103,29 +1176,33 @@ def SingleCN(FM,Gts,TMax=10,showLog=False,tuplesetSortingOrder = None):
                             print('--------------------------------------------\nGenerated CN')
                             print('J ',Ji,'\n')
                         
-                        return Ji
+                        return (Ji,Gts)
                     else:
                         F.append(Ji)
+    return (None,None)
 
 
-def MatchCN(attributeHash,G,RankedMq,TMax=10):    
+def MatchCN(attributeHash,G,RankedMq,TMax=10,maxNumCns=10,tuplesetSortingOrder=None):    
     Cns = []    
-    
-    
-    tuplesetSortingOrder = {table : 1/sum([Norm for (Norm,numDistinctWords,numWords,maxFrequency) in attributeHash[table].values()]) for table in attributeHash}
+    generated_cns  = set()
     
     for  (M,score,schemascore,valuescore) in RankedMq:
 
-        Gts = G.getMatchGraph(M)
-        Cn = SingleCN(M,Gts,TMax=TMax,tuplesetSortingOrder=tuplesetSortingOrder)
+        (Cn,Gts) = SingleCN(M,G,TMax=TMax,tuplesetSortingOrder=tuplesetSortingOrder)
+        
         if(Cn is not None):
             
-            
-            #Dividindo score pelo tamanho da cn (SEGUNDA PARTE DO RANKING)
-            
-            CnScore = score/len(Cn)
-            
-            Cns.append( (Cn,Gts,CnScore,schemascore,valuescore) )
+            tCn = tuple(Cn)            
+            if tCn not in generated_cns:
+                generated_cns.add(tCn)
+                
+                #Dividindo score pelo tamanho da cn (SEGUNDA PARTE DO RANKING)                
+                CnScore = score/len(Cn)
+                
+                Cns.append( (Cn,Gts,CnScore,schemascore,valuescore) )
+                
+                if len(Cns)>maxNumCns:
+                    break
     
     #Ordena CNs pelo CnScore
     RankedCns=sorted(Cns,key=lambda x: x[3],reverse=True)
@@ -1136,6 +1213,14 @@ def MatchCN(attributeHash,G,RankedMq,TMax=10):
 # ## getSQLfromCN
 
 def getSQLfromCN(Gts,Cn,contract=True,showEvaluationFields=True,rowslimit=1000):
+    
+    #preciso colocar que dois non free tuple sets são disjuntos, t1.id<>t3.id
+    #print('\n\n Gts')
+    #pp(Gts)
+    
+    #print('\n\n Cn')
+    #pp(Cn)
+    
     selected_attributes = [] 
     hashTables = {}
     conditions=[]
@@ -1162,7 +1247,7 @@ def getSQLfromCN(Gts,Cn,contract=True,showEvaluationFields=True,rowslimit=1000):
         for table, attr, valueWords in tsA.getValueMappings():
             #tratamento de keywords
             for term in valueWords:
-                condition = 'CAST('+A +'.'+ attr + ' AS VARCHAR) ILIKE \'%' + term + '%\''
+                condition = 'CAST('+A +'.'+ attr + ' AS VARCHAR) ILIKE \'%' + term.replace('\'','\'\'') + '%\''
                 conditions.append(condition)
         
         
@@ -1184,30 +1269,37 @@ def getSQLfromCN(Gts,Cn,contract=True,showEvaluationFields=True,rowslimit=1000):
             tables_id.append(tx+'.__search_id')
             tables.append(tableX+' '+tx)
             
+            for ty in hashTables[tableX]:
+                if ty!=tx:
+                    condition = tx +'.id<>' + ty + '.id'
+                    conditions.append(condition)              
         
     relationshipsText = ['('+a+'.__search_id'+','+b+'.__search_id'+')' for (a,b) in relationships]
     
     sqlText = 'SELECT \n '
     
     if showEvaluationFields:    
-        sqlText +=' ('+', '.join(tables_id)+') AS Tuples,\n '
+        sqlText +=' ('+', '.join(tables_id)+') AS Tuples'
         if len(relationships)>0:
-            sqlText +='('+', '.join(relationshipsText)+') AS Relationships,\n '
+            
+            if len(tables_id) > 0:
+                sqlText += ',\n'
+            
+            sqlText +='('+', '.join(relationshipsText)+') AS Relationships'
+    
+    if len(selected_attributes)>0:
+        sqlText += ',\n'
         
     sqlText += ' ,\n '.join(selected_attributes)
     
     sqlText +='\nFROM\n ' + ',\n '.join(tables)
     
-    sqlText +='\nWHERE\n '
-    
-    # Considerando que todas as pequisas tem ao menos um value term
-    if  len(conditions)==0:
-        sqlText+= ' FALSE'
-        return sqlText
+    if  len(conditions)>0 or len(joincondiditions)>0:
+        sqlText +='\nWHERE\n '
     
     sqlText +='\n AND '.join(joincondiditions)
     sqlText +='\n'
-    if len(joincondiditions)>0:
+    if len(conditions)>0 and len(joincondiditions)>0:
         sqlText +='\n AND '
     sqlText +='\n AND '.join(conditions)
     
@@ -1228,31 +1320,33 @@ def getSQLfromCN(Gts,Cn,contract=True,showEvaluationFields=True,rowslimit=1000):
     return sqlText
 
 
-def getGoldenStandards(goldenStandardsFileName='golden_standards/imdb_martins',numQueries=11):
+def getGoldenStandards(goldenStandardsFileName=GONDELSTANDARDS,numQueries=11):
     goldenStandards = {}
     for i in range(1,numQueries+1):
         filename = goldenStandardsFileName+'/'+str(i).zfill(3) +'.txt'
         with open(filename) as f:
+            try:
+                listOfTuples = []
+                Q = ()
+                for j, line in enumerate(f.readlines()):
 
-            listOfTuples = []
-            Q = ()
-            for j, line in enumerate(f.readlines()):
-                
-                splitedLine = line.split('#')
-                
-                line_without_comment=splitedLine[0]
-                
-                if len(splitedLine)>1:
-                    comment_of_line=splitedLine[1]
-                
-                    if(j==2):
-                        query = comment_of_line
-                        Q = tuple(tokenizeString(query))
-                    
-                if line_without_comment:                    
-                    
-                    relevantResult = eval(line_without_comment)
-                    listOfTuples.append( relevantResult )
+                    splitedLine = line.split('#')
+
+                    line_without_comment=splitedLine[0]
+
+                    if len(splitedLine)>1:
+                        comment_of_line=splitedLine[1]
+
+                        if(j==2):
+                            query = comment_of_line
+                            Q = tuple(tokenizeString(query))
+
+                    if line_without_comment:                    
+                        relevantResult = eval(line_without_comment)
+                        listOfTuples.append( relevantResult )
+            except:
+                print('ERROR IN GOLDEN STANDARD FILE ',filename)
+                raise
             
             goldenStandards[Q]=listOfTuples
             
@@ -1260,22 +1354,25 @@ def getGoldenStandards(goldenStandardsFileName='golden_standards/imdb_martins',n
 
 
 
-def getGoldenMappings(goldenMappingsFileName='golden_mappings/golden_mappings_imdb_martins.txt'):
+def getGoldenMappings(goldenMappingsFileName=GOLDENMAPPINGS):
     
     goldenMappings = []
     with open(goldenMappingsFileName) as f:
-        for j, line in enumerate(f.readlines()):
+        try:
+            for j, line in enumerate(f.readlines()):
+                splitedLine = line.split('#')
 
-            splitedLine = line.split('#')
+                line_without_comment=splitedLine[0]
 
-            line_without_comment=splitedLine[0]
+                if len(splitedLine)>1:
+                    comment_of_line=splitedLine[1]
 
-            if len(splitedLine)>1:
-                comment_of_line=splitedLine[1]
-
-            if line_without_comment:                    
-                tupleset = eval(line_without_comment)
-                goldenMappings.append(tupleset)
+                if line_without_comment:                    
+                    tupleset = eval(line_without_comment)
+                    goldenMappings.append(tupleset)
+        except:
+            print('ERROR reading golden mapping ',goldenMappingsFileName)
+            raise
 
     return goldenMappings
 
@@ -1374,6 +1471,27 @@ def normalizeResult(ResultFromDatabase,Description):
         normalizedResult.append( (tuples,relationships) )
     return normalizedResult
 
+def getRelevanceFromSQL(Q,goldenStandards,SQL,dbname=DBNAME,user=DBUSER,password=DBPASS):
+    #print('RELAVANCE OF SQL:\n')
+    #print(SQL)
+    with psycopg2.connect(dbname=dbname,user=user,password=password) as conn:
+        with conn.cursor() as cur:
+            try:
+                cur.execute(SQL)
+                Results = cur.fetchall()
+                Description = cur.description
+            except:
+                print('ERRO SQL:\n',SQL)
+                raise 
+
+            isEmpty = (len(Results)==0)
+
+            NResults = normalizeResult(Results, Description)
+
+            Relevance = evaluanteResult(NResults,Q,goldenStandards)
+
+            return (Relevance, isEmpty)
+
 
 # -
 
@@ -1397,28 +1515,9 @@ def getRelevantPosition(RankedCns,Q,goldenStandards):
         #print('\nSQL2\n')
         #print(SQL2)
         
-        def getRelevanceFromSQL(SQL,dbname='imdb',user='imdb',password='imdb'):
-            #print('RELAVANCE OF SQL:\n')
-            #print(SQL)
-            with psycopg2.connect(dbname=dbname,user=user,password=password) as conn:
-                with conn.cursor() as cur:
-                
-                    cur.execute(SQL)
-
-                    Results = cur.fetchall()
-                    Description = cur.description
-
-                    isEmpty = (len(Results)==0)
-
-                    NResults = normalizeResult(Results, Description)
-
-                    Relevance = evaluanteResult(NResults,Q,goldenStandards)
-
-                    return (Relevance, isEmpty)
-        
-        (Relevance, isEmpty)=getRelevanceFromSQL(SQL1)
-        if Relevance==False:
-            (Relevance, isEmpty)=getRelevanceFromSQL(SQL2)
+        (Relevance, isEmpty)=getRelevanceFromSQL(Q,goldenStandards,SQL1)
+        #if Relevance==False:
+        #    (Relevance, isEmpty)=getRelevanceFromSQL(Q,goldenStandards,SQL2)
     
         position+=1
         if not isEmpty:
@@ -1431,8 +1530,7 @@ def getRelevantPosition(RankedCns,Q,goldenStandards):
     return (-1,-1)
 
 
-# +
-def preProcessing(emb_file="word_embeddings/word2vec/GoogleNews-vectors-negative300.bin"):
+def preProcessing(emb_file=EMBEDDINGFILE):
     
     wordEmbeddingsModel=loadWordEmbeddingsModel(emb_file)
     (wordHash,attributeHash) = createInvertedIndex(wordEmbeddingsModel)
@@ -1443,12 +1541,10 @@ def preProcessing(emb_file="word_embeddings/word2vec/GoogleNews-vectors-negative
     return (wordHash,attributeHash,wordEmbeddingsModel)
 
 
-# -
-
 wordHash,attributeHash,wordEmbeddingsModel=preProcessing()
 
 
-def execSQL (SQL,dbname='imdb',user='imdb',password='imdb'):
+def execSQL (SQL,dbname=DBNAME,user=DBUSER,password=DBPASS,showResults=True):
     #print('RELAVANCE OF SQL:\n')
     #print(SQL)
     from prettytable import PrettyTable
@@ -1456,36 +1552,51 @@ def execSQL (SQL,dbname='imdb',user='imdb',password='imdb'):
     
     with psycopg2.connect(dbname=dbname,user=user,password=password) as conn:
         with conn.cursor() as cur:
+            try:
+                cur.execute(SQL)
 
-            cur.execute(SQL)
+                #Results = cur.fetchall()
+                #Description = cur.description
 
-            #Results = cur.fetchall()
-            #Description = cur.description
+                #x.field_names = Description
 
-            #x.field_names = Description
 
-            
-            if cur.description:  
-                table = PrettyTable()
-                table.field_names = [ '{}{}'.format(i,col[0]) for i,col in enumerate(cur.description)]
-                for row in cur.fetchall():
-                    table.add_row(row)
-
-            print(table)
+                if cur.description:  
+                    table = PrettyTable()
+                    table.field_names = [ '{}{}'.format(i,col[0]) for i,col in enumerate(cur.description)]
+                    for row in cur.fetchall():
+                        table.add_row(row)
+                if showResults:
+                    print(table)
+            except:
+                print('ERRO SQL:\n',SQL)
+                raise
                         
             return cur.rowcount>0
 
+import pandas as pd
+URI = 'postgres://imdb:imdb@localhost/'+DBNAME
+def  execSQLPandas(SQL,dbname=DBNAME,user=DBUSER,password=DBPASS):
+    df=pd.read_sql(SQL, URI)
+    if len(df)>0:
+        display(df)
+        return True
+    return False
 
-def keywordSearch (wordHash,attributeHash,wordEmbeddingsModel,sim_args={},
+
+def keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
          showLog=False,
          SimilarityThreshold=0.9,
-         querySetFileName='querysets/queryset_imdb_martins_new.txt',
-         goldenStandardsFileName='golden_standards/imdb_martins', numQueries=11,
-         goldenMappingsFileName='golden_mappings/golden_mappings_imdb_martins.txt',
+         querySetFileName=QUERYSETFILE,
+         goldenStandardsFileName=GONDELSTANDARDS, numQueries=11,
+         goldenMappingsFileName=GOLDENMAPPINGS,
          evaluation = True,
-         topK=10,
-         TMax=10):
-    
+         topK=15,
+         TMax=10,
+         TMaxQM=5,
+         tuplesetSortingOrder = {table : 1/sum([Norm for (Norm,numDistinctWords,numWords,maxFrequency) in attributeHash[table].values()]) for table in attributeHash},
+         similarities = Similarities(wordEmbeddingsModel,attributeHash,getSchemaGraph())
+         ):
     QuerySets = getQuerySets(querySetFileName)
     goldenStandards = getGoldenStandards(goldenStandardsFileName=goldenStandardsFileName,numQueries=numQueries)
     goldenMappings = getGoldenMappings()
@@ -1500,7 +1611,6 @@ def keywordSearch (wordHash,attributeHash,wordEmbeddingsModel,sim_args={},
     nonEmptyRelevantPositions = []
     
     G = getSchemaGraph()  
-    similarities = Similarities(wordEmbeddingsModel,attributeHash,G)
     
     for (i,Q) in enumerate(QuerySets):
        
@@ -1510,10 +1620,15 @@ def keywordSearch (wordHash,attributeHash,wordEmbeddingsModel,sim_args={},
         Rq = TSFind(Q, wordHash)
         print(len(Rq),'TUPLE-SETS CREATED\n')
         
+        if showLog:
+            pp(Rq)
+        
         print('FINDING SCHEMA-SETS')        
         Sq = SchSFind(Q,attributeHash,similarities)
-
         print(len(Sq),' SCHEMA-SETS CREATED\n')
+        
+        if showLog:
+            pp(Sq)
 
         for schema_mapping in Sq:
             if schema_mapping in goldenMappings:
@@ -1523,43 +1638,38 @@ def keywordSearch (wordHash,attributeHash,wordEmbeddingsModel,sim_args={},
                 FP.append(schema_mapping)       
         
         print('GENERATING QUERY MATCHES')
-        Mq = QMGen(Q,Rq|Sq)
+        Mq = QMGen(Q,Rq|Sq,TMaxQM=TMaxQM)
         print (len(Mq),'QUERY MATCHES CREATED\n')
         
         print('RANKING QUERY MATCHES')
-        RankedMq = QMRank(Mq,wordHash,attributeHash,similarities)   
+        RankedMq = QMRank(Q,Mq,wordHash,attributeHash,similarities)   
         
         if showLog:
             for (j, (M,score,schemascore,valuescore) ) in enumerate(RankedMq[:topK]):
-                print(j+1,'ª QM')
+                print(j+1,'ª QM')           
+                
+                
                 print('Schema Score:',"%.8f" % schemascore,
                       '\nValue Score: ',"%.8f" % valuescore,
                       '\n|M|: ',"%02d (Não considerado para calcular o total score)" % len(M),
                       '\nTotal Score: ',"%.8f" % score)
                 pp(M)
+                #print('\n----Details----\n')
+                #QMRank(Q, [M],wordHash,attributeHash,similarities,showLog=True)
+                
                 print('----------------------------------------------------------------------\n')
         
         
-        if topK<=0:
-            topKMq=RankedMq
-        else:
-            topKMq=RankedMq[:topK]
+        print('GENERATING CANDIDATE NETWORKS')     
         
-        numSkippedCNs = len(RankedMq)-topK
+        RankedCns = MatchCN(attributeHash,G,RankedMq,TMax=TMax,maxNumCns=topK,tuplesetSortingOrder=tuplesetSortingOrder)
         
-        
-        RankedMq=[]
-        gc.collect()
+        numSkippedCNs = len(RankedMq)-len(RankedCns)
         
         if numSkippedCNs>0:
             print(numSkippedCNs,' QUERY MATCHES SKIPPED (due to low score)')
         else:
             numSkippedCNs=0
-            
-        
-        print('GENERATING CANDIDATE NETWORKS')     
-        
-        RankedCns = MatchCN(attributeHash,G,topKMq,TMax=TMax)
         
         listSkippedCN.append(numSkippedCNs)
         
@@ -1577,20 +1687,21 @@ def keywordSearch (wordHash,attributeHash,wordEmbeddingsModel,sim_args={},
                 
                 print()
                 print('\nCONTRACTED')
-                SQL1= getSQLfromCN(Gts,Cn,showEvaluationFields=False,rowslimit=10)
+                SQL1= getSQLfromCN(Gts,Cn,showEvaluationFields=True,rowslimit=10)
                 print(SQL1)
                 
-                if (execSQL(SQL1) == False):
+                if (execSQL(SQL1,showResults=False) == False):
                 
                     print('\nUNCONTRACTED')
                     
-                    SQL2=getSQLfromCN(Gts,Cn,contract=False,showEvaluationFields=False,rowslimit=10)
+                    SQL2=getSQLfromCN(Gts,Cn,contract=False,showEvaluationFields=True,rowslimit=10)
                     print(SQL2)
-                    execSQL(SQL2)
+                    execSQL(SQL2,showResults=False)
                     
                     
-                    print('----------------------------------------------------------------------\n')
+                    #print('----------------------------------------------------------------------\n')
 
+        
         print('CHECKING RELEVANCE')
         
         if(evaluation):
@@ -1602,52 +1713,33 @@ def keywordSearch (wordHash,attributeHash,wordEmbeddingsModel,sim_args={},
             print('NO RELEVANT CN FOUND')
         else:
             (Cn,_,_,_,_) = RankedCns[pos-1]
-            print('RELEVANT CN IN %d POSITION'%(pos))
+            print('RELEVANT CN IN %d POSITION (%d NON-EMPTY)'%(pos,nonEmptyPos))
             pp(Cn)
                         
         relevantPositions.append(pos)
         nonEmptyRelevantPositions.append(nonEmptyPos)
         
-        print('==========================================================================\
+        print('RELEVANT POSITIONS: ',relevantPositions)
+        print('NON-EMPTY RELEVANT POSITIONS: ',nonEmptyRelevantPositions)
+        
+        print('\n==========================================================================\
 ==========================================================================\
 ==========================================================================\
 ==========================================================================\
 ==========================================================================\
-==========================================================================')
+==========================================================================\n')
     FN=goldenMappings
     return (relevantPositions,nonEmptyRelevantPositions,listSkippedCN,TP,FP,FN)
 
 Result = keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
-                       evaluation=False,showLog=True)
-
-execSQL('''SELECT 
- t0.name ,
- t2.title ,
- t4.name
-FROM
- casting t1,
- casting t3,
- person t0,
- person t4,
- movie t2
-WHERE
- t1.person_id = t0.id
- AND t2.id = t1.movie_id
- AND t3.movie_id = t2.id
- AND t4.id = t3.person_id
-
- AND CAST(t0.name AS VARCHAR) ILIKE '%wachowski%'
- AND CAST(t2.title AS VARCHAR) ILIKE '%matrix%'
- AND CAST(t4.name AS VARCHAR) ILIKE '%reeves%' limit 5;''')
-
-attributeHash
+                       evaluation=False,showLog=True,
+                       querySetFileName=QUERYSETFILE,
+                       goldenStandardsFileName=GONDELSTANDARDS,
+                       numQueries=50,
+                       topK=10,
+                       TMaxQM=3,
+                       tuplesetSortingOrder = {'movie_info':6,'char_name':3,'role_type':4,'cast_info':5,'title':1,'name':2},
+                       #tuplesetSortingOrder = {'movie_info':6,'character':3,'role':4,'casting':5,'movie':1,'person':2},
+                      )
 
 (relevantPositions,nonEmptyRelevantPositions,listSkippedCN,TP,FP,FN) = Result
-
-x = getQuerySets()
-for i,Q in enumerate(x):
-    print('{} Query:{}\nrelevant:{}\nnon-empty relevant:{}\nskippedCN:{}\nTP:{}\nFP:{}\nFN:{}\n\n'.format(i,Q,relevantPositions,nonEmptyRelevantPositions,listSkippedCN,TP,FP,FN))
-
-similarities = Similarities(wordEmbeddingsModel,attributeHash,getSchemaGraph())
-
-attributeHash

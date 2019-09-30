@@ -1,0 +1,8 @@
+# [reference standard]
+# imdb2009
+# title i'm going to make him an offer he can't refuse
+# ([44306726, 26289717], [(26289717, 44306726)])
+# The golden standard is wrong.
+# The tuple 26289717 contains "an offer he won't refuse"
+# The correct tuple is 26289691 that contains "an offer he can't refuse"
+([44306726, 26289691], [(26289691, 44306726)])
