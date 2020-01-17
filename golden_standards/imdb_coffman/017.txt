@@ -1,4 +1,0 @@
-# [reference standard]
-# imdb2009
-# the notebook
-([44278650], [])

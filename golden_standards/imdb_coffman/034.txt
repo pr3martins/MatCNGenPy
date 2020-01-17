@@ -1,4 +1,0 @@
-# [reference standard]
-# imdb2009
-# title toto feeling kansas any more
-([44317680, 26320478], [(26320478, 44317680)])

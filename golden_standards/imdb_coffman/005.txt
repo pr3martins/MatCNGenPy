@@ -1,4 +1,0 @@
-# [reference standard]
-# imdb2009
-# harrison ford
-([39214967], [])

@@ -1,4 +1,0 @@
-# [reference standard]
-# imdb2009
-# title make an offer refuse
-([44306726, 26289717], [(26289717, 44306726)])

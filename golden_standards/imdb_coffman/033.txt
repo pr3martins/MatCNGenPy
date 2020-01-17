@@ -1,4 +1,0 @@
-# [reference standard]
-# imdb2009
-# title i coulda class contender somebody bum
-([44123538, 26224320], [(26224320, 44123538)])
