@@ -1,4 +1,0 @@
-# [reference standard]
-# imdb2009
-# the sound of music
-([44308629], []) # 1965 production

@@ -1,0 +1,24 @@
+# actor Draco Harry Potter
+('person', '*', frozenset({'actor'}), frozenset())
+# Johnny Depp movies
+('movie', '*', frozenset({'movies'}), frozenset())
+# Movie Steven Spielberg
+('movie', '*', frozenset({'movie'}), frozenset())
+# James Bond actor name
+('character', 'name', frozenset({'name'}), frozenset())
+ ('person', '*', frozenset({'actor'}), frozenset())
+ ('person', 'name', frozenset({'name'}), frozenset())
+# protagonist of the sound of music
+('character', '*', frozenset({'protagonist'}), frozenset())
+# character Forrest Gump
+('character', '*', frozenset({'character'}), frozenset())
+# movie Social Network
+('movie', '*', frozenset({'movie'}), frozenset())
+# king kong with the actor jack black
+('person', '*', frozenset({'actor'}), frozenset())
+# actor in The Fellowship of the Ring and The Return of the King
+('person', '*', frozenset({'actor'}), frozenset())
+# the cast of Star Wars
+('casting', '*', frozenset({'cast'}), frozenset())
+# actors of X-Men
+('person', '*', frozenset({'actors'}), frozenset())

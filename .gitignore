@@ -2,3 +2,4 @@
 datasets/
 word_embeddings/
 venv/
+*.ipynb

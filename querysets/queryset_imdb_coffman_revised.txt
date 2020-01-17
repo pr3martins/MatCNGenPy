@@ -28,15 +28,15 @@ title norman bates
 title darth vader
 title the wicked witch of the west
 title nurse ratched
-title frankly i give a damn
-title make an offer refuse
-title i coulda class contender somebody bum
-title toto feeling kansas any more
-title looking at you kid
+title frankly my dear i don't give a damn
+title i'm going to make him an offer he can't refuse
+title you don't understand i coulda had class i coulda been a contender i coulda been somebody instead of a bum which is what i am
+title toto i've a feeling we're not in kansas any more
+title here's looking at you kid
 hamill skywalker
 hanks 2004
-henry fonda yours mine ours character name
-russell crowe gladiator character name
+henry fonda yours mine ours char_name
+russell crowe gladiator char_name
 brent spiner star trek
 audrey hepburn 1951
 name jacques clouseau

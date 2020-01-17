@@ -1,0 +1,35 @@
+Consultas importantes:
+
+actor Draco Harry Potter
+a resposta correta seria actor como um valor de role, no entanto,
+isto não daria uma resposta certa ao usuário
+
+king kong with jack black
+retorna na primeira CN
+king kong with the actor jack black
+retorna na quinta Cn
+
+actor Draco Harry Potter
+precisa da arvore
+
+actor in The Fellowship of the Ring and The Return of the King
+precisa não ser árvore
+
+the cast of Star Wars
+não retorna nada eficaz
+
+title i coulda class contender somebody bum
+Como exite a QM
+{('info','info',frozenset(),frozenset({'somebody', 'contender', 'title', 'coulda', 'bum', 'class'}))}
+Nunca existira a QM correta, que no caso é
+{('movie', 'title', frozenset({'title'}), frozenset()),
+ ('info','info',frozenset(),frozenset({'somebody', 'contender', 'coulda', 'bum', 'class'}))}
+Isso se dá pela condicao, tem essas keywords e nenhuma outra alem delas... Mas isso nao da muito certo quanto temos schema words
+
+
+
+
+
+ERROS ENCONTRADOS
+TSInter está errado
+olhar TSInterMartins

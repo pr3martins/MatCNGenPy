@@ -1,0 +1,6 @@
+# [reference standard])
+# imdb2009
+# character Forrest Gump
+([22010738], []) # Young Forrest Gump
+([21610599], []) # Forrest Gump
+([22378325], []) # Forrest Gump Jr.
