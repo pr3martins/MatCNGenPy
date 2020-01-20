@@ -22,7 +22,9 @@ QUERYSETFILE ='querysets/queryset_imdb_martins_qualis.txt'
 GONDELSTANDARDS ='golden_standards/imdb_coffman_revised'
 GOLDENMAPPINGS ='golden_mappings/golden_mappings_imdb_martins.txt'
 
-STEP_BY_STEP = False
+STEP_BY_STEP = True
+PREPROCESSING = False
+CUSTOM_QUERY = None
 ```
 
 ```python
@@ -56,6 +58,8 @@ from nltk.stem import WordNetLemmatizer
 from nltk.stem import PorterStemmer
 from nltk.corpus import wordnet as wn
 from queue import deque
+
+from collections import Counter #used to check whether two CandidateNetworks are equal
 ```
 
 ```python
@@ -73,7 +77,7 @@ def loadWordEmbeddingsModel(filename = EMBEDDINGFILE):
 ```
 
 ```python
-if STEP_BY_STEP:
+if STEP_BY_STEP and PREPROCESSING:
     wordEmbeddingsModel=loadWordEmbeddingsModel(EMBEDDINGFILE)
 ```
 
@@ -330,7 +334,7 @@ def createInvertedIndex(embeddingModel,showLog=True):
 ```
 
 ```python
-if STEP_BY_STEP:
+if STEP_BY_STEP and PREPROCESSING:
     (wordHash,attributeHash) = createInvertedIndex(wordEmbeddingsModel)
 ```
 
@@ -348,7 +352,7 @@ def processIAF(wordHash,attributeHash):
 ```
 
 ```python
-if STEP_BY_STEP:
+if STEP_BY_STEP and PREPROCESSING:
     processIAF(wordHash,attributeHash)
 ```
 
@@ -374,7 +378,7 @@ def processNormsOfAttributes(wordHash,attributeHash):
 ```
 
 ```python
-if STEP_BY_STEP:
+if STEP_BY_STEP and PREPROCESSING:
     processNormsOfAttributes(wordHash,attributeHash)
 ```
 
@@ -387,6 +391,11 @@ def preProcessing(emb_file=EMBEDDINGFILE):
     
     print('PRE-PROCESSING STAGE FINISHED')
     return (wordHash,attributeHash,wordEmbeddingsModel)
+```
+
+```python
+if not STEP_BY_STEP and PREPROCESSING:
+    (wordHash,attributeHash,wordEmbeddingsModel) = preProcessing()
 ```
 
 # Processing Stage
@@ -409,7 +418,10 @@ def getQuerySets(filename=QUERYSETFILE):
 ```python
 if STEP_BY_STEP:
     QuerySets = getQuerySets(QUERYSETFILE)
-    Q = QuerySets[0]
+    if CUSTOM_QUERY is None:
+        Q = QuerySets[0]
+    else:
+        Q = CUSTOM_QUERY
     print(Q)
 ```
 
@@ -478,6 +490,9 @@ class Graph:
         
     def str_graph_dict(self):
         return str(self.__graph_dict)
+    
+    def str_edges_info(self):
+        return str(self.__edges_info)
 ```
 
 ```python
@@ -573,6 +588,7 @@ class KeywordMatch:
     def __eq__(self, other):
         return isinstance(other, KeywordMatch) and self.table == other.table and self.predicates == other.predicates and self.tuples == other.tuples  
     
+    #Although this class is multable, it is not supposed to change once in a hashable collection
     def __hash__(self):
         return hash(frozenset(self.__repr__()))
 ```
@@ -1119,6 +1135,9 @@ class CandidateNetwork(Graph):
         
     def keyword_matches(self):
         return {keyword_match for keyword_match,alias in self.vertices()}
+    
+    def non_free_keyword_matches(self):
+        return {keyword_match for keyword_match,alias in self.vertices() if not isinstance(keyword_match,FreeKeywordMatch)}
             
     def isSound(self):
         if len(self) < 3:
@@ -1175,22 +1194,33 @@ class CandidateNetwork(Graph):
         for neighbour in incoming_neighbours:
             self._Graph__graph_dict[neighbour][0].remove(vertex)
         self._Graph__graph_dict.pop(vertex)
-        
+         
     def minimal_cover(self,QM):
+        if self.non_free_keyword_matches()!=set(QM):
+            return False
+        
         for vertex in self.vertices():
             keyword_match,alias = vertex
             if isinstance(keyword_match,FreeKeywordMatch):
                 visited = {vertex}
                 start_node = next(iter( self.vertices() - visited ))
                 
-                for vertex in self.leveled_dfs_iter(start_node,visited=visited):
+                for x in self.leveled_dfs_iter(start_node,visited=visited):
                     #making sure that the dfs algorithm runs until the end of iteration
                     continue
                 
                 if visited == self.vertices():
                     return False
         return True
-                
+    
+    def unaliased_edges(self):
+        for (keyword_match,alias),(neighbour_keyword_match,neighbour_alias) in self.edges():
+            yield (keyword_match,neighbour_keyword_match)
+    
+    def __eq__(self, other):
+        return (isinstance(other, CandidateNetwork) and
+                set(Counter(self.unaliased_edges()).items()) == set(Counter(other.unaliased_edges()).items())
+               )
 ```
 
 ```python
@@ -1262,7 +1292,7 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5)
                             vertex_v = new_CN.add_vertex(adj_keyword_match)
                             new_CN.add_edge(vertex_u,vertex_v,edge_direction=direction)         
 
-                            if new_CN not in F and len(new_CN)<=TMax and new_CN.isSound():
+                            if new_CN not in F and new_CN not in returnedCNs and len(new_CN)<=TMax and new_CN.isSound():
 #                                 print('Adding ',adj_keyword_match,' to current CN')
                                 if new_CN.minimal_cover(new_QM):
 #                                     print('GENERATED THE FIRST ONE')
@@ -1271,6 +1301,7 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5)
                                     else:
                                         return returnedCNs
                                 else:
+                                    #print('Adding\n{}\n'.format(new_CN))
                                     F.append(new_CN)
                                     
                 
@@ -1280,11 +1311,10 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5)
                 adj_keyword_match = FreeKeywordMatch(adj_table)
                 vertex_v = new_CN.add_vertex(adj_keyword_match)
                 new_CN.add_edge(vertex_u,vertex_v,edge_direction=direction)
-                if new_CN not in F and len(new_CN)<=TMax and new_CN.isSound():
+                if new_CN not in F and new_CN not in returnedCNs and len(new_CN)<=TMax and new_CN.isSound():
 #                     print('Adding ',adj_keyword_match,' to current CN')
+                    #print('Adding\n{}\n'.format(new_CN))
                     F.append(new_CN)
-#                 else:
-#                     print('Did not add ',adj_keyword_match,' to current CN ({},{},{})'.format(new_CN not in F,len(new_CN)<=TMax,new_CN.isSound()))
                         
     return returnedCNs
 ```
@@ -1364,9 +1394,9 @@ def getSQLfromCN(G,Cn,showEvaluationFields=False,rowslimit=1000):
     tables__search_id = []
     relationships__search_id = []
 
-    prev_vertex = None
+    last_vertex_by_level = []
 
-    for vertex in Cn.dfs_iter():
+    for level,vertex in Cn.leveled_dfs_iter():
         keyword_match, alias = vertex
         for _ ,attr,keywords in keyword_match.getMappings():
             selected_attributes.append('{}.{}'.format(alias,attr))
@@ -1379,11 +1409,11 @@ def getSQLfromCN(G,Cn,showEvaluationFields=False,rowslimit=1000):
         if showEvaluationFields:
             tables__search_id.append('{}.__search_id'.format(alias))
 
-        if prev_vertex is None:
+        if level == 0:
             selected_tables.append('{} {}'.format(keyword_match.table,alias))
         else:
             # After the second table, it starts to use the JOIN syntax
-            prev_keyword_match,prev_alias = prev_vertex 
+            prev_keyword_match,prev_alias = last_vertex_by_level[level-1] 
 
 
             if keyword_match.table in G.get_outgoing_neighbours(prev_keyword_match.table):
@@ -1399,8 +1429,11 @@ def getSQLfromCN(G,Cn,showEvaluationFields=False,rowslimit=1000):
                                                                         column ))
             if showEvaluationFields:
                 relationships__search_id.append('({}.__search_id, {}.__search_id)'.format(alias,prev_alias))     
-
-        prev_vertex = vertex
+        
+        if level < len(last_vertex_by_level):
+            last_vertex_by_level[level] = vertex
+        else:
+            last_vertex_by_level.append(vertex)
 
 
     for table,aliases in hashtables.items():        
@@ -1423,7 +1456,7 @@ def getSQLfromCN(G,Cn,showEvaluationFields=False,rowslimit=1000):
 
 ```python
 if STEP_BY_STEP:
-    (Cn,score,valuescore,schemascore)= RankedCns[15]
+    (Cn,score,valuescore,schemascore)= RankedCns[1]
     print(Cn)
     getSQLfromCN(G,Cn,showEvaluationFields=True)
 ```
@@ -1488,6 +1521,8 @@ def keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
     QuerySets = getQuerySets(querySetFileName)
     G = getSchemaGraph()    
     
+    
+    returnedCn = {}
     
     if tuplesetSortingOrder is None:
         tuplesetSortingOrder = {table : 1/sum([Norm for (Norm,numDistinctWords,numWords,maxFrequency) in attributeHash[table].values()]) for table in attributeHash}
@@ -1561,10 +1596,9 @@ def keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
 ==========================================================================\
 ==========================================================================\
 ==========================================================================\n')
-```
-
-```python
-(wordHash,attributeHash,wordEmbeddingsModel) = preProcessing()
+        
+        returnedCn[Q]=RankedCns
+    return returnedCn
 ```
 
 ```python
