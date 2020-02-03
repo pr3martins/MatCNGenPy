@@ -24,7 +24,7 @@ GOLDENMAPPINGS ='golden_mappings/golden_mappings_imdb_martins.txt'
 
 STEP_BY_STEP = True
 PREPROCESSING = False
-CUSTOM_QUERY = None
+CUSTOM_QUERY = ('movie', 'social', 'network')
 ```
 
 ```python
@@ -60,6 +60,9 @@ from nltk.corpus import wordnet as wn
 from queue import deque
 
 from collections import Counter #used to check whether two CandidateNetworks are equal
+
+import re # used to parse string to keyword match class
+import json #used to parse class to json
 ```
 
 ```python
@@ -425,7 +428,7 @@ if STEP_BY_STEP:
     print(Q)
 ```
 
-## class SchemaGraph
+## Class Graph
 
 ```python
 class Graph:
@@ -445,19 +448,34 @@ class Graph:
         self.__graph_dict.setdefault(vertex, (set(),set()) )
         return vertex
     
-    def get_outgoing_neighbours(self,vertex): 
-        return self.__graph_dict[vertex][0]
-           
-    def get_incoming_neighbours(self,vertex):
-        return self.__graph_dict[vertex][1]
+    def add_outgoing_neighbour(self,vertex,neighbour):
+        self.__graph_dict[vertex][0].add(neighbour)
     
-    def get_neighbours(self,vertex):
-        return self.get_outgoing_neighbours(vertex) | self.get_incoming_neighbours(vertex)
+    def add_incoming_neighbour(self,vertex,neighbour):
+        self.__graph_dict[vertex][1].add(neighbour)
+    
+    def outgoing_neighbours(self,vertex):
+        yield from self.__graph_dict[vertex][0]
+           
+    def incoming_neighbours(self,vertex):
+        yield from self.__graph_dict[vertex][1]
+    
+    def neighbours(self,vertex):
+        #This method does not use directed_neighbours to avoid generating tuples with directions
+        yield from self.outgoing_neighbours(vertex)
+        yield from self.incoming_neighbours(vertex)
+        
+    def directed_neighbours(self,vertex):
+        #This method does not use directed_neighbours to avoid generating tuples with directions
+        for outgoing_neighbour in self.outgoing_neighbours(vertex):
+            yield ('>',outgoing_neighbour)
+        for incoming_neighbour in self.incoming_neighbours(vertex):
+            yield ('<',incoming_neighbour)
 
     def add_edge(self, vertex1, vertex2,edge_info = None, edge_direction='>'):
         if edge_direction=='>':        
-            self.get_outgoing_neighbours(vertex1).add(vertex2)
-            self.get_incoming_neighbours(vertex2).add(vertex1)
+            self.add_outgoing_neighbour(vertex1,vertex2)
+            self.add_incoming_neighbour(vertex2,vertex1)
 
             if self.__enable_edge_info:
                 self.__edges_info[(vertex1, vertex2)] = edge_info
@@ -475,9 +493,57 @@ class Graph:
         return self.__graph_dict.keys()
             
     def edges(self):
-        for vertex in self.vertices():
-            for neighbour in self.get_outgoing_neighbours(vertex):
-                yield (vertex,)+ (neighbour,)
+            for vertex in self.vertices():
+                for neighbour in self.outgoing_neighbours(vertex):
+                    yield (vertex,)+ (neighbour,)
+    
+    def dfs_pair_iter(self, source_iter = None, root_predecessor = False):
+        last_vertex_by_level=[]
+        
+        if source_iter is None:
+            source_iter = self.leveled_dfs_iter()
+        
+        for direction,level,vertex in source_iter:
+            if level < len(last_vertex_by_level):
+                last_vertex_by_level[level] = vertex
+            else:
+                last_vertex_by_level.append(vertex)
+            
+            if level>0:
+                prev_vertex = last_vertex_by_level[level-1]
+                yield (prev_vertex,direction,vertex)
+            elif root_predecessor:
+                yield (None,'',vertex)
+        
+                
+    def leveled_dfs_iter(self,start_vertex=None,visited = None, level=0, direction='',two_way_transversal=True):
+        if len(self)>0:
+            if start_vertex is None:
+                start_vertex = self.get_starting_vertex()             
+            if visited is None:
+                visited = set()
+            visited.add(start_vertex)
+
+            yield( (direction,level,start_vertex) )
+            
+            for neighbour in self.outgoing_neighbours(start_vertex):
+                if neighbour not in visited:
+                    yield from self.leveled_dfs_iter(neighbour,visited,
+                                                     level=level+1,
+                                                     direction='>',
+                                                     two_way_transversal=two_way_transversal) 
+            
+            # two_way_transversal indicates whether the DFS will expand through incoming neighbours
+            if two_way_transversal:
+                for neighbour in self.incoming_neighbours(start_vertex):
+                    if neighbour not in visited:
+                        yield from self.leveled_dfs_iter(neighbour,visited,
+                                                         level=level+1,
+                                                         direction='<',
+                                                         two_way_transversal=two_way_transversal)   
+    
+    def get_starting_vertex(self):
+        return next(iter(self.vertices()))
     
     def pp(self):
         pp(self.__graph_dict)
@@ -521,6 +587,9 @@ def getSchemaGraph(dbname=DBNAME,user=DBUSER,password=DBPASS):
 if STEP_BY_STEP:
     G = getSchemaGraph()  
     print(G)
+    for direction,level,vertex in G.leveled_dfs_iter():
+        print(level*'\t',direction,vertex)
+    print([x for x in G.dfs_pair_iter(root_predecessor=True)])
 ```
 
 ## Class KeywordMatch
@@ -528,127 +597,87 @@ if STEP_BY_STEP:
 ```python
 class KeywordMatch:
    
-    def __init__(self, km_type,table, predicates = None, tuples = None):  
-        self.__slots__ =['table','type','predicates','tuples']
+    def __init__(self, km_type,table, predicates=None):  
+        self.__slots__ =['table','type','predicates']
         self.type = km_type
+        #The table attribute is not supposed to change
         self.table = table
-        self.predicates= predicates if predicates is not None else {}
-        self.tuples= tuples if tuples is not None else set()
-        
-    def addTuple(self, tuple_id):
-        self.tuples.add(tuple_id)
-        
-    def addTuples(self, tuple_ids):
-        self.tuples.update(tuple_ids)
-        
-    def addAttribute(self,attribute):
-        self.attributes[attribute].setdefault( (set(),set()) )   
-        
-    def addMapping(self,keyword,attribute='*'):
-        self.predicates.setdefault( attribute,set() )  
-        self.predicates[attribute].add(keyword)
-         
-    def getMappings(self):
-        return [(self.table,attribute,keywords) 
-                for attribute, keywords in self.predicates.items()]
-            
-    def getAttributes(self):
-        return [attr for attr in self.predicates.keys()]
+        if predicates is None:
+            self.predicates= frozenset()
+        else:
+            self.predicates= frozenset({ (key,frozenset(keywords)) for key,keywords in predicates.items()})
+    
+    def getMappings(self): 
+        for attribute, keywords in self.predicates:
+            yield (self.table,attribute,keywords)
                 
     def getKeywords(self):
-        keywords = set()
-        for attribute in self.predicates.keys():
-            keywords.update(self.predicates[attribute])
-        return frozenset(keywords)
-        
-    def hasTuples(self):
-        return len(self.tuples)>0
-    
-    def clearTuples(self):
-        self.tuples.clear()
-    
+        for attribute, keywords in self.predicates:
+            yield from keywords
+            
     def __repr__(self):
         return self.__str__()
     
     def __str__(self):
-        result = self.table.upper()
-        str_predicates = []
-        
-        for attribute in self.predicates.keys():
-            keywords = self.predicates[attribute]
-            
-            if keywords == set():
-                keywords = '{}'
-                
-            str_predicates.append (attribute + str(keywords))
-            
-        result += "(" + ','.join(str_predicates) + ")"
-        return result        
+        str_predicates = ["{}{{{}}}".format(attribute,','.join(keywords)) for attribute,keywords in self.predicates]
+        return "{}.{}({})".format(self.table.upper(),self.type,','.join(str_predicates)) 
     
     def __eq__(self, other):
-        return isinstance(other, KeywordMatch) and self.table == other.table and self.predicates == other.predicates and self.tuples == other.tuples  
+        return isinstance(other, KeywordMatch) and self.table == other.table and self.predicates == other.predicates 
     
-    #Although this class is multable, it is not supposed to change once in a hashable collection
     def __hash__(self):
-        return hash(frozenset(self.__repr__()))
-```
-
-```python
-class ValueKeywordMatch(KeywordMatch):
-    def __init__(self, table, predicates = None, tuples = None):
-        self.__slots__ =['table','type','predicates','tuples']
-        KeywordMatch.__init__(self, 1 ,table, predicates, tuples)
+        return hash( (self.table,self.type,self.predicates) )
     
-    def union(self, otherVKMatch, changeSources = False):
-              
-        if self.table != otherVKMatch.table:
-            return None
-        
-        if self.table == None:
-            return None
-        
-        if len(self.getKeywords() & otherVKMatch.getKeywords())>0:
-            #tuple sets com palavras repetidas
-            return None
+    def to_json_serializable(self):
+        predicates_object = [{'attribute':attribute,
+                            'keywords':list(keywords)} for attribute,keywords in self.predicates]
+        return {'table':self.table,'type':self.type,'predicates':predicates_object}
+    
+    def to_json(self):
+        return json.dumps(self.to_json_serializable())
+    
+    @staticmethod
+    def from_str(str_km):
+        re_km = re.compile('([A-Z]+)\.([v,s,f])\((.*)\)')
+        re_predicates = re.compile('([\w\*]*)\{([^\}]*)\}\,?')
+        re_keywords = re.compile('(\w+)\,?')
 
-        jointTuples = self.tuples & otherVKMatch.tuples
+        m_km=re_km.match(str_km)
+
+        table = m_km.group(1).lower()
+        km_type = m_km.group(2)
+
+        str_predicates = m_km.group(3)
         
-        jointPredicates = {}
-        
-        jointPredicates.update(copy.deepcopy(self.predicates))
-        
-        for attribute, keywords in otherVKMatch.predicates.items():  
-            jointPredicates.setdefault(attribute, set() ).update(keywords)
-            
-        jointTupleset = ValueKeywordMatch(self.table, jointPredicates , jointTuples)
-        
-        if changeSources:
-            self.tuples.difference_update(jointTuples)
-            otherVKMatch.tuples.difference_update(jointTuples)
-        
-        return jointTupleset 
+        m_p=re_predicates.findall(str_predicates)
+
+        predicates = {}
+        for attribute,str_keywords in m_p:
+            predicates[attribute]={key for key in re_keywords.findall(str_keywords)}
+
+        if km_type == 'v':
+            return ValueKeywordMatch(table,predicates)
+        elif km_type == 's':
+            if len(predicates)==1:
+                attribute = next(iter(predicates))
+                keyword = next(iter(predicates[attribute]))
+                return SchemaKeywordMatch(table,attribute,keyword)
+        else:
+            if len(predicates)==0:
+                return FreeKeywordMatch(table)
+        return None
+                
+class ValueKeywordMatch(KeywordMatch):
+    def __init__(self, table, predicates):
+        KeywordMatch.__init__(self, 'v' ,table, predicates)
 
 class SchemaKeywordMatch(KeywordMatch):
-    def __init__(self, table, attribute, tuples = None):
-        self.__slots__ =['table','type','predicates','tuples','__attribute']
-        KeywordMatch.__init__(self, 2 ,table, predicates={attribute:set()}, tuples=tuples) 
-        self.__attribute=attribute
-    
-    def addAttribute(self,attribute):
-        pass 
-        
-    def addMapping(self,keyword):
-        self.predicates[self.__attribute].add(keyword)
+    def __init__(self, table, attribute, keyword):
+        KeywordMatch.__init__(self, 's' ,table, predicates={attribute:{keyword}}) 
         
 class FreeKeywordMatch(KeywordMatch):
     def __init__(self, table):
-        self.__slots__ =['table','type','predicates','tuples']
-        KeywordMatch.__init__(self, 3 ,table)
-    def addAttribute(self,attribute):
-        pass 
-        
-    def addMapping(self,keyword):
-        pass
+        KeywordMatch.__init__(self, 'f' ,table,predicates=None)      
 ```
 
 ```python
@@ -662,7 +691,7 @@ def VKMGen(Q,wordHash):
     '''
     
     #Part 1: Find sets of tuples containing each keyword
-    P = set()
+    P = {}
     for keyword in Q:
         
         if keyword not in wordHash:
@@ -670,21 +699,14 @@ def VKMGen(Q,wordHash):
         
         for table in wordHash[keyword]:
             for (attribute,ctids) in wordHash[keyword][table].items():
-                vkm = ValueKeywordMatch(table)
-                vkm.addMapping(keyword,attribute)
-                vkm.addTuples(ctids)                
-                P.add(vkm)
+                vkm = ValueKeywordMatch(table, {attribute:{keyword}})
+                P[vkm] = set(ctids)
     
     #Part 2: Find sets of tuples containing larger termsets
     TSInterMartins(P)
     
-    
-    #Part 3: Clean tuples
-    for vkm in P:
-        vkm.clearTuples()
-    
-    
-    return P
+    #Part 3: Ignore tuples
+    return set(P)
 
 def TSInterMartins(P):
     #Input: A Set of non-empty tuple-sets for each keyword alone P 
@@ -694,44 +716,37 @@ def TSInterMartins(P):
     Termset is any non-empty subset K of the terms of a query Q        
     '''
     
-#     print('TSInter\n')
-#     pp(P)
-#     print('\n====================================\n')
-
-    
-    for ( Ti , Tj ) in itertools.combinations(P,2):
-        
-#         print('\nTESTANDO UNION {} \n {} \n'.format(Ti,Tj))       
-#         print('´´´´´´´TSInter\n')
-#         pp(P)
-        
-        Tx = Ti.union(Tj, changeSources = True)        
-        
-#         print('\nUNION COMPILADO de {} \n {} \n {}\n\n\n'.format(Ti,Tj,Tx))
-        
-#         if Tx is not None:
-#             print(len(Tx.tuples), 'tuples on union') 
-#         print('´´´´´´´TSInter\n')
-#         pp(P)    
+    for ( vkm_i , vkm_j ) in itertools.combinations(P,2):
         
         
-        if Tx is not None and Tx.hasTuples():            
-            P.add(Tx)
+        if (vkm_i.table == vkm_j.table and
+            set(vkm_i.getKeywords()).isdisjoint(vkm_j.getKeywords())
+           ):
             
-            if Ti.hasTuples() == False:
-#                 print('Ti {} has not tuples',Ti)
-                P.remove(Ti)
-#             else:
-#                 print('{} has {} tuples'.format(Ti,len(Ti.tuples)))
+            jointTuples = P[vkm_i] & P[vkm_j]
+            
+            if len(jointTuples)>0:
+                                
+                joint_predicates = {}
                 
-            if Tj.hasTuples() == False:
-#                 print('Tj {} has not tuples',Tj)
-                P.remove(Tj)
-#             else:
-#                 print('{} has {} tuples'.format(Tj,len(Tj.tuples)))
-            
-            TSInterMartins(P)
-            break
+                for attribute, keywords in vkm_i.predicates:
+                    joint_predicates.setdefault(attribute,set()).update(keywords)
+                
+                for attribute, keywords in vkm_j.predicates:
+                    joint_predicates.setdefault(attribute,set()).update(keywords)
+                vkm_ij = ValueKeywordMatch(vkm_i.table,joint_predicates)
+                P[vkm_ij] = jointTuples
+                                
+                P[vkm_i].difference_update(jointTuples)
+                if len(P[vkm_i])==0:
+                    del P[vkm_i]
+                
+                P[vkm_j].difference_update(jointTuples)
+                if len(P[vkm_j])==0:
+                    del P[vkm_j]                
+
+                return TSInterMartins(P)
+    return
 ```
 
 ```python
@@ -812,7 +827,7 @@ class Similarities:
             if column != '*':
                 sim_list |= self.EmbB[table][column]
             else:                
-                for neighbourTable in self.schemaGraph.get_neighbours(table):
+                for neighbourTable in self.schemaGraph.neighbours(table):
 
                     if neighbourTable not in self.model:
                         continue
@@ -914,7 +929,7 @@ class Similarities:
             if tableA not in self.attributeHash or tableA not in self.model:
                 continue
 
-            for tableB in self.schemaGraph.get_neighbours(tableA):
+            for tableB in self.schemaGraph.neighbours(tableA):
 
                 if tableB not in self.attributeHash or tableB not in self.model:
                     continue
@@ -942,8 +957,7 @@ def SKMGen(Q,attributeHash,similarities,threshold=0.8):
                 sim = similarities.word_similarity(keyword,table,attribute)
                 
                 if sim >= threshold:
-                    skm = SchemaKeywordMatch(table,attribute)
-                    skm.addMapping(keyword)
+                    skm = SchemaKeywordMatch(table,attribute,keyword)
                     S.add(skm)
                     
     return S
@@ -964,23 +978,21 @@ def MinimalCover(MC, Q):
     #Input:  A subset MC (Match Candidate) to be checked as total and minimal cover
     #Output: If the match candidate is a TOTAL and MINIMAL cover
 
-    Subset = [ts.getKeywords() for ts in MC]
-    u = set().union(*Subset)    
+    if {keyword 
+        for keyword_match in MC 
+        for keyword in keyword_match.getKeywords()
+       } != set(Q):
+        return False
     
-    isTotal = (u == set(Q))
-    for element in Subset:
-        
-        new_u = list(Subset)
-        new_u.remove(element)
-        
-        new_u = set().union(*new_u)
-        
-        if new_u == set(Q):
+    for element in MC: 
+        if {keyword 
+            for keyword_match in MC 
+            for keyword in keyword_match.getKeywords() 
+            if keyword_match!=element
+           } == set(Q):
             return False
     
-    #print('MC({},{}) = {}'.format(MC,Q,isTotal))
-    
-    return isTotal
+    return True
 ```
 
 ```python
@@ -1128,10 +1140,14 @@ if STEP_BY_STEP:
         print('----------------------------------------------------------------------\n')
 ```
 
+## Class CN
+
 ```python
 class CandidateNetwork(Graph):
-    def add_vertex(self, vertex):
-        return super().add_vertex((vertex, 't{}'.format(self.__len__()+1)))
+    def add_vertex(self, vertex, alias=True):
+        if alias:
+            vertex = (vertex, 't{}'.format(self.__len__()+1))
+        return super().add_vertex(vertex)
         
     def keyword_matches(self):
         return {keyword_match for keyword_match,alias in self.vertices()}
@@ -1156,24 +1172,6 @@ class CandidateNetwork(Graph):
         
         return True
                 
-    def leveled_dfs_iter(self,start_vertex=None,visited = None, level=0):
-        if len(self)>0:
-            if start_vertex is None:
-                start_vertex = self.get_starting_vertex()             
-            if visited is None:
-                visited = set()
-            visited.add(start_vertex)
-
-            yield( (level,start_vertex) )
-
-            for neighbour in self.get_neighbours(start_vertex):
-                if neighbour not in visited:
-                    yield from self.leveled_dfs_iter(neighbour,visited,level=level+1)  
-    
-    def dfs_iter(self,start_vertex=None,visited = None, level=0):
-        for level,vertex in self.leveled_dfs_iter():
-            yield vertex    
-    
     def get_starting_vertex(self):
         vertex = None
         for vertex in self.vertices():
@@ -1181,12 +1179,6 @@ class CandidateNetwork(Graph):
             if not isinstance(keyword_match,FreeKeywordMatch):
                 break
         return vertex
-    
-    def __repr__(self):
-        if len(self)==0:
-            return 'EmptyCN'            
-        print_string = ['\t'*level+str(vertex[0])  for level,vertex in self.leveled_dfs_iter()]            
-        return '\n'.join(print_string)
     
     def remove_vertex(self,vertex):
         print('vertex:\n{}\n_Graph__graph_dict\n{}'.format(vertex,self._Graph__graph_dict))
@@ -1217,10 +1209,68 @@ class CandidateNetwork(Graph):
         for (keyword_match,alias),(neighbour_keyword_match,neighbour_alias) in self.edges():
             yield (keyword_match,neighbour_keyword_match)
     
-    def __eq__(self, other):
-        return (isinstance(other, CandidateNetwork) and
-                set(Counter(self.unaliased_edges()).items()) == set(Counter(other.unaliased_edges()).items())
-               )
+    def __eq__(self, other : CandidateNetwork):
+        return hash(self)==hash(other)
+    
+    #Although this is a multable object, we made the hash function since it is not supposed to change after inserted in the lsit of generated cns
+    def __hash__(self):
+        return hash(frozenset(Counter(self.unaliased_edges()).items()))
+    
+    def __repr__(self):
+        if len(self)==0:
+            return 'EmptyCN'            
+        print_string = ['\t'*level+direction+str(vertex[0])  for direction,level,vertex in self.leveled_dfs_iter()]            
+        return '\n'.join(print_string)
+    
+    def to_json_serializable(self):
+        return [{'keyword_match':keyword_match.to_json_serializable(),
+            'alias':alias,
+            'outgoing_neighbours':[alias for (km,alias) in outgoing_neighbours],
+            'incoming_neighbours':[alias for (km,alias) in incoming_neighbours]}
+            for (keyword_match,alias),(outgoing_neighbours,incoming_neighbours) in self._Graph__graph_dict.items()]
+            
+    def to_json(self):
+        return json.dumps(self.to_json_serializable())
+    
+    @staticmethod
+    def from_str(str_cn):
+
+        def parser_iter(str_cn):
+            re_cn = re.compile('^(\t*)([><]?)(.*)',re.MULTILINE)
+            for i,(space,direction,str_km) in enumerate(re_cn.findall(str_cn)):
+                yield (direction,len(space), (KeywordMatch.from_str(str_km),'t{}'.format(i+1)))
+
+        imported_cn = CandidateNetwork()
+
+        prev_vertex = None
+        for prev_vertex,direction,vertex in imported_cn.dfs_pair_iter(root_predecessor=True,source_iter=parser_iter(str_cn)):
+            imported_cn.add_vertex(vertex,alias=False)
+            if prev_vertex is not None:
+                imported_cn.add_edge(prev_vertex,vertex,edge_direction=direction)  
+
+        return imported_cn
+   
+```
+
+```python
+cnx= CandidateNetwork.from_str(
+    '''PERSON.s(*{actor})
+	<CASTING.f()
+		>MOVIE.v(title{king,return})
+	<CASTING.f()
+		>MOVIE.v(title{ri ng,fellowship})''')
+x=cnx.to_json()
+x
+```
+
+```python
+for item in cnx.to_json():
+    pp(item)
+    print('\n')
+```
+
+```python
+KeywordMatch.from_str("PERSON.s(*{actor})").to_json_serializable()
 ```
 
 ```python
@@ -1237,7 +1287,7 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5)
     
     table_hash = {}
     
-    returnedCNs = []
+    returnedCNs = set()
     
     for keyword_match in QM:
         table_hash.setdefault(keyword_match.table,([],[]))
@@ -1263,7 +1313,7 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5)
     CN.add_vertex(first_element)
     
     if len(new_QM)==1:
-        returnedCNs.append(CN)
+        returnedCNs.add(CN)
     else:    
         F.append(CN)
         
@@ -1276,14 +1326,8 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5)
         for vertex_u in CN.vertices():
             keyword_match,alias = vertex_u
             
-            for adj_table in G.get_neighbours(keyword_match.table):
+            for direction,adj_table in G.directed_neighbours(keyword_match.table):
 #                 print('CHECKING TABLE ',adj_table)
-                
-                if adj_table in G.get_outgoing_neighbours(keyword_match.table):
-                    direction = '>'
-                else:
-                    direction = '<'
-                
 #                 print('NON-FREE KEYWORD MATCHES')
                 if adj_table in table_hash:                    
                     for adj_keyword_match in table_hash[adj_table]:
@@ -1297,7 +1341,7 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5)
                                 if new_CN.minimal_cover(new_QM):
 #                                     print('GENERATED THE FIRST ONE')
                                     if len(returnedCNs)<topKCNs:
-                                        returnedCNs.append(new_CN)
+                                        returnedCNs.add(new_CN)
                                     else:
                                         return returnedCNs
                                 else:
@@ -1313,7 +1357,7 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5)
                 new_CN.add_edge(vertex_u,vertex_v,edge_direction=direction)
                 if new_CN not in F and new_CN not in returnedCNs and len(new_CN)<=TMax and new_CN.isSound():
 #                     print('Adding ',adj_keyword_match,' to current CN')
-                    #print('Adding\n{}\n'.format(new_CN))
+#                     print('Adding\n{}\n'.format(new_CN))
                     F.append(new_CN)
                         
     return returnedCNs
@@ -1322,7 +1366,7 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5)
 ```python
 if STEP_BY_STEP:
     TMax=5
-    topK = 20    
+    topK = 10    
     tuplesetSortingOrder = {table : 1/sum([Norm for (Norm,numDistinctWords,numWords,maxFrequency) in attributeHash[table].values()]) for table in attributeHash}
     
     (QM,score,valuescore,schemascore) = RankedMq[0]
@@ -1334,13 +1378,13 @@ if STEP_BY_STEP:
         print(j+1,'ª CN',
               '\n|Cn|: ',"%02d (Considerado para o Total Score)" % len(Cn),
               '\nTotal Score: ',"%.8f" % (score/len(Cn)))
-        pp(Cn)
+        print(Cn)
 ```
 
 ```python
 def MatchCN(attributeHash,G,RankedMq,TMax=10,maxNumCns=20,tuplesetSortingOrder=None):    
     UnrankedCns = []    
-    generated_cns=set()
+    generated_cns=[]
     
     for  (QM,score,valuescore,schemascore) in RankedMq:
         Cns = CNGraphGen(QM,G,TMax=TMax,tuplesetSortingOrder=tuplesetSortingOrder)
@@ -1349,7 +1393,7 @@ def MatchCN(attributeHash,G,RankedMq,TMax=10,maxNumCns=20,tuplesetSortingOrder=N
     
         for Cn in Cns:
             if(Cn not in generated_cns):          
-                generated_cns.add(Cn)
+                generated_cns.append(Cn)
 
                 #Dividindo score pelo tamanho da cn (SEGUNDA PARTE DO RANKING)                
                 CnScore = score/len(Cn)
@@ -1361,8 +1405,6 @@ def MatchCN(attributeHash,G,RankedMq,TMax=10,maxNumCns=20,tuplesetSortingOrder=N
     
     return RankedCns
 ```
-
-# NOTE: SABER SE UMA CN É UMA COBERTURA MÍNIMA NÃO É MAIS TRIVIAL
 
 ```python
 if STEP_BY_STEP:   
@@ -1393,10 +1435,8 @@ def getSQLfromCN(G,Cn,showEvaluationFields=False,rowslimit=1000):
 
     tables__search_id = []
     relationships__search_id = []
-
-    last_vertex_by_level = []
-
-    for level,vertex in Cn.leveled_dfs_iter():
+    
+    for prev_vertex,direction,vertex in Cn.dfs_pair_iter(root_predecessor=True):    
         keyword_match, alias = vertex
         for _ ,attr,keywords in keyword_match.getMappings():
             selected_attributes.append('{}.{}'.format(alias,attr))
@@ -1409,14 +1449,12 @@ def getSQLfromCN(G,Cn,showEvaluationFields=False,rowslimit=1000):
         if showEvaluationFields:
             tables__search_id.append('{}.__search_id'.format(alias))
 
-        if level == 0:
+        if prev_vertex is None:
             selected_tables.append('{} {}'.format(keyword_match.table,alias))
         else:
             # After the second table, it starts to use the JOIN syntax
-            prev_keyword_match,prev_alias = last_vertex_by_level[level-1] 
-
-
-            if keyword_match.table in G.get_outgoing_neighbours(prev_keyword_match.table):
+            prev_keyword_match,prev_alias = prev_vertex
+            if direction == '>':
                 (prev_column,column) = G.get_edge_info(prev_keyword_match.table,keyword_match.table)
             else:
                 (column,prev_column) = G.get_edge_info(keyword_match.table,prev_keyword_match.table)
@@ -1428,12 +1466,7 @@ def getSQLfromCN(G,Cn,showEvaluationFields=False,rowslimit=1000):
                                                                         alias,
                                                                         column ))
             if showEvaluationFields:
-                relationships__search_id.append('({}.__search_id, {}.__search_id)'.format(alias,prev_alias))     
-        
-        if level < len(last_vertex_by_level):
-            last_vertex_by_level[level] = vertex
-        else:
-            last_vertex_by_level.append(vertex)
+                relationships__search_id.append('({}.__search_id, {}.__search_id)'.format(alias,prev_alias))
 
 
     for table,aliases in hashtables.items():        
@@ -1608,6 +1641,7 @@ Result = keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
                        goldenStandardsFileName=GONDELSTANDARDS,
                        numQueries=50,
                        topK=10,
+                       TMax=5,
                        TMaxQM=3,
                        #tuplesetSortingOrder = {'movie_info':6,'char_name':3,'role_type':4,'cast_info':5,'title':1,'name':2},
                        #tuplesetSortingOrder = {'movie_info':6,'character':3,'role':4,'casting':5,'movie':1,'person':2},
