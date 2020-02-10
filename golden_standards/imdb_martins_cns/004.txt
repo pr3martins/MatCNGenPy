@@ -1,0 +1,63 @@
+{
+    "query": [
+        "names",
+        "characters",
+        "wizard",
+        "oz"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "schema_filter": [
+                    {
+                        "keywords": [
+                            "characters",
+                            "names"
+                        ],
+                        "attribute": "name"
+                    }
+                ],
+                "value_filter": [],
+                "table": "character"
+            },
+            "alias": "t3",
+            "incoming_neighbours": [
+                "t2"
+            ]
+        },
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "schema_filter": [],
+                "value_filter": [
+                    {
+                        "keywords": [
+                            "wizard",
+                            "oz"
+                        ],
+                        "attribute": "title"
+                    }
+                ],
+                "table": "movie"
+            },
+            "alias": "t1",
+            "incoming_neighbours": [
+                "t2"
+            ]
+        },
+        {
+            "outgoing_neighbours": [
+                "t3",
+                "t1"
+            ],
+            "keyword_match": {
+                "schema_filter": [],
+                "value_filter": [],
+                "table": "casting"
+            },
+            "alias": "t2",
+            "incoming_neighbours": []
+        }
+    ]
+}

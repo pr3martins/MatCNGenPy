@@ -6,7 +6,7 @@ actors of Friends
 actors in Citizen Kane
 Lucy Liu movies
 films of Robert Downey Jr
-director of Psycho
+name of director of Psycho
 Will Smith movies
 actor Draco Harry Potter
 Keanu Reeves movies
@@ -18,7 +18,7 @@ movie Social Network
 actor in The Fellowship of the Ring and The Return of the King
 actors of X-Men
 Matilda actress name
-Scissorhands director
+Scissorhands director name
 movie pierce brosnan james bond
 person matrix reloaded
 movie john travolta

@@ -1,0 +1,97 @@
+{
+    "query": [
+        "actor",
+        "fellowship",
+        "ring",
+        "return",
+        "king"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [
+                "t3",
+                "t5"
+            ],
+            "keyword_match": {
+                "schema_filter": [],
+                "value_filter": [],
+                "table": "casting"
+            },
+            "alias": "t4",
+            "incoming_neighbours": []
+        },
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "schema_filter": [
+                    {
+                        "keywords": [
+                            "actor"
+                        ],
+                        "attribute": "*"
+                    }
+                ],
+                "value_filter": [],
+                "table": "person"
+            },
+            "alias": "t3",
+            "incoming_neighbours": [
+                "t4",
+                "t2"
+            ]
+        },
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "schema_filter": [],
+                "value_filter": [
+                    {
+                        "keywords": [
+                            "king",
+                            "return"
+                        ],
+                        "attribute": "title"
+                    }
+                ],
+                "table": "movie"
+            },
+            "alias": "t5",
+            "incoming_neighbours": [
+                "t4"
+            ]
+        },
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "schema_filter": [],
+                "value_filter": [
+                    {
+                        "keywords": [
+                            "ring",
+                            "fellowship"
+                        ],
+                        "attribute": "title"
+                    }
+                ],
+                "table": "movie"
+            },
+            "alias": "t1",
+            "incoming_neighbours": [
+                "t2"
+            ]
+        },
+        {
+            "outgoing_neighbours": [
+                "t3",
+                "t1"
+            ],
+            "keyword_match": {
+                "schema_filter": [],
+                "value_filter": [],
+                "table": "casting"
+            },
+            "alias": "t2",
+            "incoming_neighbours": []
+        }
+    ]
+}

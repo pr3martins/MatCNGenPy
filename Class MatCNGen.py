@@ -20,12 +20,12 @@ DBUSER = 'imdb'
 DBPASS = 'imdb'
 EMBEDDINGFILE = "word_embeddings/word2vec/GoogleNews-vectors-negative300.bin"
 QUERYSETFILE ='querysets/queryset_imdb_martins_qualis.txt'
-GONDELSTANDARDS ='golden_standards/imdb_coffman_revised'
+GOLDENSTANDARDSPATH ='golden_standards/imdb_martins_cns'
 GOLDENMAPPINGS ='golden_mappings/golden_mappings_imdb_martins.txt'
 
 STEP_BY_STEP = True
 PREPROCESSING = False
-CUSTOM_QUERY = ('movie', 'social', 'network')
+CUSTOM_QUERY = ('movie', 'pierce', 'brosnan', 'james', 'bond')
 
 
 # -
@@ -63,6 +63,7 @@ from queue import deque
 
 from collections import Counter #used to check whether two CandidateNetworks are equal
 
+import glob #to list filenames in directories
 import re # used to parse string to keyword match class
 import json #used to parse class to json
 
@@ -580,90 +581,117 @@ if STEP_BY_STEP:
 
 # ## Class KeywordMatch
 
-# +
 class KeywordMatch:
    
-    def __init__(self, km_type,table, predicates=None):  
-        self.__slots__ =['table','type','predicates']
-        self.type = km_type
-        #The table attribute is not supposed to change
-        self.table = table
-        if predicates is None:
-            self.predicates= frozenset()
-        else:
-            self.predicates= frozenset({ (key,frozenset(keywords)) for key,keywords in predicates.items()})
-    
-    def getMappings(self): 
-        for attribute, keywords in self.predicates:
+    def __init__(self, table, value_filter={},schema_filter={}):  
+        self.__slots__ =['table','schema_filter','value_filter']
+        self.table = table        
+        self.schema_filter= frozenset({ (key,frozenset(keywords)) for key,keywords in schema_filter.items()})            
+        self.value_filter= frozenset({ (key,frozenset(keywords)) for key,keywords in value_filter.items()})            
+
+    def is_free(self):
+        return len(self.schema_filter)==0 and len(self.value_filter)==0
+        
+    def schema_mappings(self): 
+        for attribute, keywords in self.schema_filter:
             yield (self.table,attribute,keywords)
+    
+    def value_mappings(self): 
+        for attribute, keywords in self.value_filter:
+            yield (self.table,attribute,keywords)
+            
+    def mappings(self):
+        for attribute, keywords in self.schema_filter:
+            yield ('s',self.table,attribute,keywords)
+        for attribute, keywords in self.value_filter:
+            yield ('v',self.table,attribute,keywords)
                 
-    def getKeywords(self):
-        for attribute, keywords in self.predicates:
+    def keywords(self):
+        for attribute, keywords in self.schema_filter:
+            yield from keywords
+        for attribute, keywords in self.value_filter:
             yield from keywords
             
     def __repr__(self):
         return self.__str__()
     
     def __str__(self):
-        str_predicates = ["{}{{{}}}".format(attribute,','.join(keywords)) for attribute,keywords in self.predicates]
-        return "{}.{}({})".format(self.table.upper(),self.type,','.join(str_predicates)) 
+        str_km = ""
+        
+        def str_filter(filter_type,fltr):
+            if len(fltr) == 0:
+                return ""  
+            
+            return ".{}({})".format(
+                filter_type,
+                ','.join(
+                    [ "{}{{{}}}".format(
+                        attribute,
+                        ','.join(keywords)
+                        ) for attribute,keywords in fltr
+                    ]
+                )
+            )
+        
+        return "{}{}{}".format(self.table.upper(),str_filter('s',self.schema_filter),str_filter('v',self.value_filter)) 
     
     def __eq__(self, other):
-        return isinstance(other, KeywordMatch) and self.table == other.table and self.predicates == other.predicates 
+        return (isinstance(other, KeywordMatch) and
+                self.schema_filter == other.schema_filter and
+                self.value_filter == other.value_filter)
     
     def __hash__(self):
-        return hash( (self.table,self.type,self.predicates) )
+        return hash( (self.table,self.schema_filter,self.value_filter) )
     
     def to_json_serializable(self):
-        predicates_object = [{'attribute':attribute,
-                            'keywords':list(keywords)} for attribute,keywords in self.predicates]
-        return {'table':self.table,'type':self.type,'predicates':predicates_object}
+        
+        def filter_object(fltr):
+            return [{'attribute':attribute,
+                            'keywords':list(keywords)} for attribute,keywords in fltr]
+        
+        return {'table':self.table,
+                'schema_filter':filter_object(self.schema_filter),
+                'value_filter':filter_object(self.value_filter),}
     
     def to_json(self):
         return json.dumps(self.to_json_serializable())
     
     @staticmethod
     def from_str(str_km):
-        re_km = re.compile('([A-Z]+)\.([v,s,f])\((.*)\)')
+        re_km = re.compile('([A-Z]+)(.*)')
+        re_filters = re.compile('\.([vs])\(([^\)]*)\)')
         re_predicates = re.compile('([\w\*]*)\{([^\}]*)\}\,?')
         re_keywords = re.compile('(\w+)\,?')
 
         m_km=re_km.match(str_km)
-
         table = m_km.group(1).lower()
-        km_type = m_km.group(2)
+        schema_filter={}
+        value_filter={}
+        for filter_type,str_predicates in re_filters.findall(m_km.group(2)):
 
-        str_predicates = m_km.group(3)
+            if filter_type == 'v':
+                predicates = value_filter
+            else:
+                predicates = schema_filter
+            for attribute,str_keywords in re_predicates.findall(str_predicates):
+                predicates[attribute]={key for key in re_keywords.findall(str_keywords)}
+        return KeywordMatch(table,value_filter=value_filter,schema_filter=schema_filter,)
+    
+    
+    def from_json_serializable(json_serializable):
         
-        m_p=re_predicates.findall(str_predicates)
+        def filter_dict(filter_obj):
+            return {predicate['attribute']:predicate['keywords'] for predicate in filter_obj}
 
-        predicates = {}
-        for attribute,str_keywords in m_p:
-            predicates[attribute]={key for key in re_keywords.findall(str_keywords)}
+        return KeywordMatch(json_serializable['table'],
+                            value_filter  = filter_dict(json_serializable['value_filter']),
+                            schema_filter  = filter_dict(json_serializable['schema_filter']),)
+    
+    def from_json(str_json):
+        return KeywordMatch.from_json_serializable(json.loads(str_json))
 
-        if km_type == 'v':
-            return ValueKeywordMatch(table,predicates)
-        elif km_type == 's':
-            if len(predicates)==1:
-                attribute = next(iter(predicates))
-                keyword = next(iter(predicates[attribute]))
-                return SchemaKeywordMatch(table,attribute,keyword)
-        else:
-            if len(predicates)==0:
-                return FreeKeywordMatch(table)
-        return None
-                
-class ValueKeywordMatch(KeywordMatch):
-    def __init__(self, table, predicates):
-        KeywordMatch.__init__(self, 'v' ,table, predicates)
-
-class SchemaKeywordMatch(KeywordMatch):
-    def __init__(self, table, attribute, keyword):
-        KeywordMatch.__init__(self, 's' ,table, predicates={attribute:{keyword}}) 
-        
-class FreeKeywordMatch(KeywordMatch):
-    def __init__(self, table):
-        KeywordMatch.__init__(self, 'f' ,table,predicates=None)      
+kmx= KeywordMatch.from_str('CHARACTER.s(name{name}).v(name{scissorhands,edward},birthdate{1997})')
+KeywordMatch.from_json(kmx.to_json())
 
 
 # +
@@ -685,7 +713,7 @@ def VKMGen(Q,wordHash):
         
         for table in wordHash[keyword]:
             for (attribute,ctids) in wordHash[keyword][table].items():
-                vkm = ValueKeywordMatch(table, {attribute:{keyword}})
+                vkm = KeywordMatch(table, value_filter={attribute:{keyword}})
                 P[vkm] = set(ctids)
     
     #Part 2: Find sets of tuples containing larger termsets
@@ -706,7 +734,7 @@ def TSInterMartins(P):
         
         
         if (vkm_i.table == vkm_j.table and
-            set(vkm_i.getKeywords()).isdisjoint(vkm_j.getKeywords())
+            set(vkm_i.keywords()).isdisjoint(vkm_j.keywords())
            ):
             
             jointTuples = P[vkm_i] & P[vkm_j]
@@ -715,12 +743,13 @@ def TSInterMartins(P):
                                 
                 joint_predicates = {}
                 
-                for attribute, keywords in vkm_i.predicates:
+                for attribute, keywords in vkm_i.value_filter:
                     joint_predicates.setdefault(attribute,set()).update(keywords)
                 
-                for attribute, keywords in vkm_j.predicates:
+                for attribute, keywords in vkm_j.value_filter:
                     joint_predicates.setdefault(attribute,set()).update(keywords)
-                vkm_ij = ValueKeywordMatch(vkm_i.table,joint_predicates)
+                
+                vkm_ij = KeywordMatch(vkm_i.table,value_filter=joint_predicates)
                 P[vkm_ij] = jointTuples
                                 
                 P[vkm_i].difference_update(jointTuples)
@@ -938,7 +967,7 @@ def SKMGen(Q,attributeHash,similarities,threshold=0.8):
                 sim = similarities.word_similarity(keyword,table,attribute)
                 
                 if sim >= threshold:
-                    skm = SchemaKeywordMatch(table,attribute,keyword)
+                    skm = KeywordMatch(table,schema_filter={attribute:{keyword}})
                     S.add(skm)
                     
     return S
@@ -959,19 +988,47 @@ def MinimalCover(MC, Q):
 
     if {keyword 
         for keyword_match in MC 
-        for keyword in keyword_match.getKeywords()
+        for keyword in keyword_match.keywords()
        } != set(Q):
         return False
     
     for element in MC: 
         if {keyword 
             for keyword_match in MC 
-            for keyword in keyword_match.getKeywords() 
+            for keyword in keyword_match.keywords() 
             if keyword_match!=element
            } == set(Q):
             return False
     
     return True
+
+
+def MergeSchemaFilters(QM):
+    table_hash={}
+    for keyword_match in QM:
+        joint_schema_filter,value_keyword_matches = table_hash.setdefault(keyword_match.table,({},[]))
+
+        for attribute, keywords in keyword_match.schema_filter:
+            joint_schema_filter.setdefault(attribute,set()).update(keywords)
+
+        if len(keyword_match.value_filter) > 0:
+            value_keyword_matches.append(keyword_match)
+    merged_qm = []
+    for table,(joint_schema_filter,value_keyword_matches) in table_hash.items():    
+        if len(value_keyword_matches) > 0:
+            joint_value_filter = {attribute:keywords 
+                                  for attribute,keywords in value_keyword_matches.pop().value_filter}
+        else:
+            joint_value_filter={}
+
+        joint_keyword_match = KeywordMatch(table,
+                                           value_filter=joint_value_filter,
+                                           schema_filter=joint_schema_filter)
+
+        merged_qm.append(joint_keyword_match)
+        merged_qm+=value_keyword_matches  
+
+    return merged_qm
 
 
 def QMGen(Q,Rq, TMaxQM = 5):
@@ -983,16 +1040,28 @@ def QMGen(Q,Rq, TMaxQM = 5):
     can produce networks of tuples that fulfill the query. They
     can be thought as the leaves of a Candidate Network.
     
-    '''
+    '''  
     
     Mq = []
     for i in range(1,min(len(Q),TMaxQM)+1):
         for M in itertools.combinations(Rq,i):            
             if(MinimalCover(M,Q)):
-                Mq.append(M)
+                merged_qm = MergeSchemaFilters(M)
+                Mq.append(merged_qm)
                    
     return Mq 
 
+
+# +
+Mq = QMGen(Q,Rq|Sq,TMaxQM=TMaxQM)
+RankedMq = QMRank(Q,Mq,wordHash,attributeHash,similarities)   
+
+for (j, (M,score,valuescore,schemascore) ) in enumerate(RankedMq[21:22]):
+    print(j+1,'ª QM')           
+    pp(M)
+
+    print('----------------------------------------------------------------------\n')
+# -
 
 if STEP_BY_STEP:
     print('GENERATING QUERY MATCHES')
@@ -1015,60 +1084,49 @@ def QMRank(Q, Mq,wordHash,attributeHash,similarities,showLog=False):
         
         for keyword_match in M:
             
-            if isinstance(keyword_match,ValueKeywordMatch):
+            for table, attribute, valueWords in keyword_match.value_mappings():
+
+                (Norm,numDistinctWords,numWords,maxFrequency) = attributeHash[table][attribute]                
+                wsum = 0
+
+
                 if showLog:
-                    print(keyword_match)
-                
-                for table, attribute, valueWords in keyword_match.getMappings():
+                    print('Norm: {}\nMaxFrequency {}\n'.format(Norm,maxFrequency))
 
-                    (Norm,numDistinctWords,numWords,maxFrequency) = attributeHash[table][attribute]                
-                    wsum = 0
 
+                for term in valueWords:    
+
+                    IAF = wordHash.getIAF(term)
+
+                    frequency = len(wordHash.getMappings(term,table,attribute))
+                    TF = (frequency/maxFrequency)
+                    wsum = wsum + TF*IAF
+                    if showLog:
+                        print('- Term: {}\n  Frequency:{}\n  TF:{}\n  IAF:{}\n'.format(term,frequency,TF,IAF))
+
+                    thereIsValueTerms = True
+
+                '''
+                for i in range(len(Q)-1):
+                    if Q[i] in valueWords and Q[i+1] in valueWords:
+                        wsum = wsum * 3
+                '''        
+                cos = wsum/Norm
+                valueProd *= cos     
+        
+        
+            for table, attribute, schemaWords in keyword_match.schema_mappings():
+                schemasum = 0
+                for term in schemaWords:
+                    sim = similarities.word_similarity(term,table,attribute)
+                    schemasum += sim
 
                     if showLog:
-                        print('Norm: {}\nMaxFrequency {}\n'.format(Norm,maxFrequency))
+                        print('- Term: {}\n  Sim:{}\n'.format(term,sim))
 
+                    thereIsSchemaTerms = True
 
-                    for term in valueWords:    
-
-                        IAF = wordHash.getIAF(term)
-
-                        frequency = len(wordHash.getMappings(term,table,attribute))
-                        TF = (frequency/maxFrequency)
-                        wsum = wsum + TF*IAF
-                        if showLog:
-                            print('- Term: {}\n  Frequency:{}\n  TF:{}\n  IAF:{}\n'.format(term,frequency,TF,IAF))
-
-                        thereIsValueTerms = True
-
-                    '''
-                    for i in range(len(Q)-1):
-                        if Q[i] in valueWords and Q[i+1] in valueWords:
-                            wsum = wsum * 3
-                    '''        
-                    cos = wsum/Norm
-                    valueProd *= cos     
-        
-        
-        for keyword_match in M:
-            
-            if isinstance(keyword_match,SchemaKeywordMatch):
-                if showLog:
-                    print(keyword_match)
-                
-                for table, attribute, schemaWords in keyword_match.getMappings():
-                    schemasum = 0
-                    for term in schemaWords:
-                        sim = similarities.word_similarity(term,table,attribute)
-                        schemasum += sim
-
-                        if showLog:
-                            print('- Term: {}\n  Sim:{}\n'.format(term,sim))
-
-
-                        thereIsSchemaTerms = True
-
-                    schemaProd *= schemasum   
+                schemaProd *= schemasum   
         
         valueScore  = valueProd
         schemaScore = schemaProd
@@ -1086,7 +1144,7 @@ def QMRank(Q, Mq,wordHash,attributeHash,similarities,showLog=False):
                 
         Ranking.append( (M,score,valueScore,schemaScore) )
                             
-    return sorted(Ranking,key=lambda x: x[1],reverse=True)
+    return sorted(Ranking,key=lambda x: x[1]/len(x[0]),reverse=True)
                 
 
 if STEP_BY_STEP:
@@ -1117,8 +1175,8 @@ if STEP_BY_STEP:
 # ## Class CN
 
 class CandidateNetwork(Graph):
-    def add_vertex(self, vertex, alias=True):
-        if alias:
+    def add_vertex(self, vertex, default_alias=True):
+        if default_alias:
             vertex = (vertex, 't{}'.format(self.__len__()+1))
         return super().add_vertex(vertex)
         
@@ -1126,7 +1184,7 @@ class CandidateNetwork(Graph):
         return {keyword_match for keyword_match,alias in self.vertices()}
     
     def non_free_keyword_matches(self):
-        return {keyword_match for keyword_match,alias in self.vertices() if not isinstance(keyword_match,FreeKeywordMatch)}
+        return {keyword_match for keyword_match,alias in self.vertices() if not keyword_match.is_free()}
             
     def isSound(self):
         if len(self) < 3:
@@ -1149,7 +1207,7 @@ class CandidateNetwork(Graph):
         vertex = None
         for vertex in self.vertices():
             keyword_match,alias = vertex
-            if not isinstance(keyword_match,FreeKeywordMatch):
+            if not keyword_match.is_free():
                 break
         return vertex
     
@@ -1166,7 +1224,7 @@ class CandidateNetwork(Graph):
         
         for vertex in self.vertices():
             keyword_match,alias = vertex
-            if isinstance(keyword_match,FreeKeywordMatch):
+            if keyword_match.is_free():
                 visited = {vertex}
                 start_node = next(iter( self.vertices() - visited ))
                 
@@ -1217,28 +1275,41 @@ class CandidateNetwork(Graph):
 
         prev_vertex = None
         for prev_vertex,direction,vertex in imported_cn.dfs_pair_iter(root_predecessor=True,source_iter=parser_iter(str_cn)):
-            imported_cn.add_vertex(vertex,alias=False)
+            imported_cn.add_vertex(vertex,default_alias=False)
             if prev_vertex is not None:
                 imported_cn.add_edge(prev_vertex,vertex,edge_direction=direction)  
 
         return imported_cn
+    
+    def from_json_serializable(json_serializable_cn):
+        alias_hash ={}
+        edges=[]
+        for vertex in json_serializable_cn:
+            keyword_match = KeywordMatch.from_json_serializable(vertex['keyword_match'])
+            alias_hash[vertex['alias']]=keyword_match
+
+            for outgoing_neighbour in vertex['outgoing_neighbours']:
+                edges.append( (vertex['alias'],outgoing_neighbour) )
+                
+        candidate_network = CandidateNetwork()
+        for alias,keyword_match in alias_hash.items():
+            candidate_network.add_vertex( (keyword_match,alias) , default_alias=False)
+        for alias1, alias2 in edges:
+            vertex1 = (alias_hash[alias1],alias1)
+            vertex2 = (alias_hash[alias2],alias2)
+            candidate_network.add_edge(vertex1,vertex2)
+        return candidate_network
+    
+    def from_json(json_cn):
+        return CandidateNetwork.from_json_serializable(json.loads(json_cn))
    
 
 
-cnx= CandidateNetwork.from_str(
-    '''PERSON.s(*{actor})
-	<CASTING.f()
-		>MOVIE.v(title{king,return})
-	<CASTING.f()
-		>MOVIE.v(title{ri ng,fellowship})''')
-x=cnx.to_json()
-x
-
-for item in cnx.to_json():
-    pp(item)
-    print('\n')
-
-KeywordMatch.from_str("PERSON.s(*{actor})").to_json_serializable()
+cnx=CandidateNetwork.from_str('''CHARACTER.s(name{name}).v(name{scissorhands})
+	<CASTING
+		>ROLE
+			<CASTING.v(note{actor})''')
+CandidateNetwork.from_json(cnx.to_json())
 
 
 def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5):  
@@ -1252,37 +1323,20 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5)
         #pp(Gts)
         #print('\n\n')
     
-    table_hash = {}
+    CN = CandidateNetwork()
+    CN.add_vertex(QM[0])
+    
+    if len(QM)==1:
+        return {CN}
     
     returnedCNs = set()
     
+    table_hash={}
     for keyword_match in QM:
-        table_hash.setdefault(keyword_match.table,([],[]))
-        if isinstance(keyword_match,ValueKeywordMatch):
-            table_hash[keyword_match.table][0].append(keyword_match)
-        else:
-            table_hash[keyword_match.table][1].append(keyword_match)
-       
-    new_QM = set()
-    for table,(vk_matches,sk_matches) in table_hash.items():       
-        if len(vk_matches)>0:
-            table_hash[table]=vk_matches
-        else:
-            table_hash[table]=sk_matches[0:1]
-        
-        new_QM.update(set(table_hash[table]))
+        table_hash.setdefault(keyword_match.table,set()).add(keyword_match)    
     
     F = deque()
-    
-    first_element = next(iter(new_QM))
-        
-    CN = CandidateNetwork()
-    CN.add_vertex(first_element)
-    
-    if len(new_QM)==1:
-        returnedCNs.add(CN)
-    else:    
-        F.append(CN)
+    F.append(CN)
         
     while F:        
         CN = F.popleft()
@@ -1296,6 +1350,7 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5)
             for direction,adj_table in G.directed_neighbours(keyword_match.table):
 #                 print('CHECKING TABLE ',adj_table)
 #                 print('NON-FREE KEYWORD MATCHES')
+                
                 if adj_table in table_hash:                    
                     for adj_keyword_match in table_hash[adj_table]:
                         if adj_keyword_match not in CN.keyword_matches():
@@ -1303,9 +1358,12 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5)
                             vertex_v = new_CN.add_vertex(adj_keyword_match)
                             new_CN.add_edge(vertex_u,vertex_v,edge_direction=direction)         
 
-                            if new_CN not in F and new_CN not in returnedCNs and len(new_CN)<=TMax and new_CN.isSound():
+                            if (new_CN not in F and
+                                new_CN not in returnedCNs and
+                                len(new_CN)<=TMax and
+                                new_CN.isSound()):
 #                                 print('Adding ',adj_keyword_match,' to current CN')
-                                if new_CN.minimal_cover(new_QM):
+                                if new_CN.minimal_cover(QM):
 #                                     print('GENERATED THE FIRST ONE')
                                     if len(returnedCNs)<topKCNs:
                                         returnedCNs.add(new_CN)
@@ -1319,7 +1377,7 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5)
                 
                 new_CN = copy.deepcopy(CN)
 #                 print('FREE KEYWORD MATCHES')
-                adj_keyword_match = FreeKeywordMatch(adj_table)
+                adj_keyword_match = KeywordMatch(adj_table)
                 vertex_v = new_CN.add_vertex(adj_keyword_match)
                 new_CN.add_edge(vertex_u,vertex_v,edge_direction=direction)
                 if new_CN not in F and new_CN not in returnedCNs and len(new_CN)<=TMax and new_CN.isSound():
@@ -1346,12 +1404,15 @@ if STEP_BY_STEP:
         print(Cn)
 
 
-def MatchCN(attributeHash,G,RankedMq,TMax=10,maxNumCns=20,tuplesetSortingOrder=None):    
+def MatchCN(attributeHash,G,RankedMq,TMax=10,maxNumCns=20,tuplesetSortingOrder=None,showLog=False):    
     UnrankedCns = []    
     generated_cns=[]
     
     for  (QM,score,valuescore,schemascore) in RankedMq:
         Cns = CNGraphGen(QM,G,TMax=TMax,tuplesetSortingOrder=tuplesetSortingOrder)
+        if showLog:
+            print('QM:\n{}\nCns:'.format(QM))
+            pp(Cns)
         if len(UnrankedCns)>maxNumCns:
             break
     
@@ -1372,7 +1433,10 @@ def MatchCN(attributeHash,G,RankedMq,TMax=10,maxNumCns=20,tuplesetSortingOrder=N
 
 if STEP_BY_STEP:   
     print('GENERATING CANDIDATE NETWORKS')  
-    RankedCns = MatchCN(attributeHash,G,RankedMq,TMax=TMax,maxNumCns=topK,tuplesetSortingOrder=tuplesetSortingOrder)
+    RankedCns = MatchCN(attributeHash,G,RankedMq,
+                        TMax=TMax,
+                        maxNumCns=topK,
+                        tuplesetSortingOrder=tuplesetSortingOrder)
     print (len(RankedCns),'CANDIDATE NETWORKS CREATED AND RANKED\n')
     
     for (j, (Cn,score,valuescore,schemascore) ) in enumerate(RankedCns):
@@ -1390,7 +1454,7 @@ def getSQLfromCN(G,Cn,showEvaluationFields=False,rowslimit=1000):
     
     hashtables = {} # used for disambiguation
 
-    selected_attributes = []
+    selected_attributes = set()
     filter_conditions = []
     disambiguation_conditions = []
     selected_tables = []
@@ -1400,11 +1464,12 @@ def getSQLfromCN(G,Cn,showEvaluationFields=False,rowslimit=1000):
     
     for prev_vertex,direction,vertex in Cn.dfs_pair_iter(root_predecessor=True):    
         keyword_match, alias = vertex
-        for _ ,attr,keywords in keyword_match.getMappings():
-            selected_attributes.append('{}.{}'.format(alias,attr))
-            for keyword in keywords:
-                condition = 'CAST({}.{} AS VARCHAR) ILIKE \'%{}%\''.format(alias,attr,keyword.replace('\'','\'\'') )
-                filter_conditions.append(condition)
+        for type_km,_ ,attr,keywords in keyword_match.mappings():
+            selected_attributes.add('{}.{}'.format(alias,attr))
+            if type_km == 'v':
+                for keyword in keywords:
+                    condition = 'CAST({}.{} AS VARCHAR) ILIKE \'%{}%\''.format(alias,attr,keyword.replace('\'','\'\'') )
+                    filter_conditions.append(condition)
 
         hashtables.setdefault(keyword_match.table,[]).append(alias)
         
@@ -1442,7 +1507,7 @@ def getSQLfromCN(G,Cn,showEvaluationFields=False,rowslimit=1000):
         relationships__search_id = ['({}) AS Relationships'.format(', '.join(relationships__search_id))]
 
     sqlText = '\nSELECT\n\t{}\nFROM\n\t{}\nWHERE\n\t{}\nLIMIT {}'.format(
-        ',\n\t'.join( tables__search_id+relationships__search_id+selected_attributes ),
+        ',\n\t'.join( tables__search_id+relationships__search_id+list(selected_attributes) ),
         ',\n\t'.join(selected_tables),
         '\n\tAND '.join( disambiguation_conditions+filter_conditions),
         rowslimit)
@@ -1498,9 +1563,6 @@ def keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
          showLog=False,
          SimilarityThreshold=0.9,
          querySetFileName=QUERYSETFILE,
-         goldenStandardsFileName=GONDELSTANDARDS, numQueries=11,
-         goldenMappingsFileName=GOLDENMAPPINGS,
-         evaluation = True,
          topK=15,
          TMax=10,
          TMaxQM=3,
@@ -1585,18 +1647,109 @@ def keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
 ==========================================================================\
 ==========================================================================\
 ==========================================================================\n')
-        
         returnedCn[Q]=RankedCns
     return returnedCn
 
 Result = keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
-                       evaluation=False,showLog=True,
+                       showLog=True,
                        querySetFileName=QUERYSETFILE,
-                       goldenStandardsFileName=GONDELSTANDARDS,
-                       numQueries=50,
                        topK=10,
                        TMax=5,
                        TMaxQM=3,
                        #tuplesetSortingOrder = {'movie_info':6,'char_name':3,'role_type':4,'cast_info':5,'title':1,'name':2},
                        #tuplesetSortingOrder = {'movie_info':6,'character':3,'role':4,'casting':5,'movie':1,'person':2},
                       )
+
+
+def getGoldenStandards(path=GOLDENSTANDARDSPATH):
+    golden_standards = {}
+    for filename in glob.glob('{}/*.txt'.format(GOLDENSTANDARDSPATH.rstrip('/'))):
+        with open(filename) as f:
+            json_serializable = json.load(f)
+            golden_standards[tuple(json_serializable['query'])] = \
+                CandidateNetwork.from_json_serializable(json_serializable['candidate_network'])
+    return golden_standards
+
+
+
+if STEP_BY_STEP:
+    goldenStandards=getGoldenStandards()
+    for query,cn in goldenStandards.items():
+        print('Q: {}\nCN: {}\n'.format(query,cn))
+
+
+def setGoldenStandards(result,golden_standards=None):
+    from IPython.display import clear_output
+    if golden_standards is None:
+        golden_standards = {}
+    for Q in result:
+        if Q in golden_standards:
+            continue
+            
+        for candidate_network,_,_,_ in result[Q]:
+            clear_output()
+            answer = input('Is the following Candidate Network\nrelevant for the Query Q given (type y if yes)?\nQ:\n{}\nCN:\n{}\n'.format(Q,candidate_network))
+
+            if answer == 'y':
+                golden_standards[Q]=candidate_network
+                break
+            elif answer == 'skip':
+                break
+            elif answer == 'stop':
+                return golden_standards
+    return golden_standards
+
+
+def generateGoldenStandardFiles(golden_standards,path=GOLDENSTANDARDSPATH):    
+    for i,Q in enumerate(getQuerySets(QUERYSETFILE)):
+        
+        filename = "{}/{:0>3d}.txt".format(GOLDENSTANDARDSPATH.rstrip('/'),i+1) 
+        
+        if Q not in golden_standards:
+                print("File {} not created because the is no golden standard set for the query {}".format(filename,Q))
+                continue
+        
+        with open(filename,mode='w') as f:
+            json_serializable = {'candidate_network':golden_standards[Q].to_json_serializable(),
+                                 'query':Q,} 
+            f.write(json.dumps(json_serializable,indent=4))
+
+
+def get_relevant_positions(results,golden_stantards):
+    relevant_positions = []
+    for Q,golden_standard in golden_stantards.items():
+        idx = -1
+        for i,(candidate_network,_,_,_) in enumerate(results[Q]):
+            if candidate_network==golden_standard:
+                idx=i+1
+                break
+        relevant_positions.append(idx)
+    return relevant_positions
+
+
+e = get_relevant_positions(Result,goldenStandards)
+
+
+# +
+def mrr(position_list):
+    return sum(1/p for p in position_list if p != -1)/len(position_list)
+
+def precision_at(position_list,threshold = 3):
+    return len([p for p in position_list if p != -1 and p<=threshold])/len(position_list)
+
+
+# -
+
+mrr(e), precision_at(e,threshold=3)
+
+
+def evaluation(results,golden_stantards):
+    relevant_positions = get_relevant_positions(results,golden_stantards)
+    return {'mrr':mrr(relevant_positions),
+            'p@1':precision_at(relevant_positions,threshold=1),
+            'p@2':precision_at(relevant_positions,threshold=2),
+            'p@3':precision_at(relevant_positions,threshold=3),
+            'max':max(relevant_positions),}
+
+
+evaluation(Result,goldenStandards)

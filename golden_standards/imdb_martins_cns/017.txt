@@ -1,0 +1,34 @@
+{
+    "query": [
+        "movie",
+        "social",
+        "network"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "schema_filter": [
+                    {
+                        "keywords": [
+                            "movie"
+                        ],
+                        "attribute": "*"
+                    }
+                ],
+                "value_filter": [
+                    {
+                        "keywords": [
+                            "network",
+                            "social"
+                        ],
+                        "attribute": "title"
+                    }
+                ],
+                "table": "movie"
+            },
+            "alias": "t1",
+            "incoming_neighbours": []
+        }
+    ]
+}

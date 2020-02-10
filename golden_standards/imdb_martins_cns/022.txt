@@ -1,0 +1,84 @@
+{
+    "query": [
+        "movie",
+        "pierce",
+        "brosnan",
+        "james",
+        "bond"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "schema_filter": [
+                    {
+                        "keywords": [
+                            "movie"
+                        ],
+                        "attribute": "*"
+                    }
+                ],
+                "value_filter": [],
+                "table": "movie"
+            },
+            "alias": "t1",
+            "incoming_neighbours": [
+                "t2"
+            ]
+        },
+        {
+            "outgoing_neighbours": [
+                "t1",
+                "t3",
+                "t4"
+            ],
+            "keyword_match": {
+                "schema_filter": [],
+                "value_filter": [],
+                "table": "casting"
+            },
+            "alias": "t2",
+            "incoming_neighbours": []
+        },
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "schema_filter": [],
+                "value_filter": [
+                    {
+                        "keywords": [
+                            "brosnan",
+                            "pierce"
+                        ],
+                        "attribute": "name"
+                    }
+                ],
+                "table": "person"
+            },
+            "alias": "t3",
+            "incoming_neighbours": [
+                "t2"
+            ]
+        },
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "schema_filter": [],
+                "value_filter": [
+                    {
+                        "keywords": [
+                            "james",
+                            "bond"
+                        ],
+                        "attribute": "name"
+                    }
+                ],
+                "table": "character"
+            },
+            "alias": "t4",
+            "incoming_neighbours": [
+                "t2"
+            ]
+        }
+    ]
+}

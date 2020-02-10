@@ -1,0 +1,68 @@
+{
+    "query": [
+        "james",
+        "bond",
+        "actor",
+        "name"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "schema_filter": [],
+                "value_filter": [
+                    {
+                        "keywords": [
+                            "james",
+                            "bond"
+                        ],
+                        "attribute": "name"
+                    }
+                ],
+                "table": "character"
+            },
+            "alias": "t3",
+            "incoming_neighbours": [
+                "t2"
+            ]
+        },
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "schema_filter": [
+                    {
+                        "keywords": [
+                            "actor"
+                        ],
+                        "attribute": "*"
+                    },
+                    {
+                        "keywords": [
+                            "name"
+                        ],
+                        "attribute": "name"
+                    }
+                ],
+                "value_filter": [],
+                "table": "person"
+            },
+            "alias": "t1",
+            "incoming_neighbours": [
+                "t2"
+            ]
+        },
+        {
+            "outgoing_neighbours": [
+                "t3",
+                "t1"
+            ],
+            "keyword_match": {
+                "schema_filter": [],
+                "value_filter": [],
+                "table": "casting"
+            },
+            "alias": "t2",
+            "incoming_neighbours": []
+        }
+    ]
+}
