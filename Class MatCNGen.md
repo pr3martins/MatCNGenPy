@@ -14,7 +14,7 @@ jupyter:
 ---
 
 ```python
-DBNAME = 'imdb_subset_pericles'
+DBNAME = 'imdb_ijs'
 DBUSER = 'imdb'
 DBPASS = 'imdb'
 EMBEDDINGFILE = "word_embeddings/word2vec/GoogleNews-vectors-negative300.bin"
@@ -23,8 +23,8 @@ GOLDENSTANDARDSPATH ='golden_standards/imdb_martins_cns'
 GOLDENMAPPINGS ='golden_mappings/golden_mappings_imdb_martins.txt'
 
 STEP_BY_STEP = True
-PREPROCESSING = False
-CUSTOM_QUERY = ('movie', 'pierce', 'brosnan', 'james', 'bond')
+PREPROCESSING = True
+CUSTOM_QUERY = None
 ```
 
 ```python
@@ -227,10 +227,20 @@ class WordHash(dict):
 
 ```python
 class DatabaseIter:
-    def __init__(self,embeddingModel,dbname=DBNAME,user=DBUSER,password=DBPASS):
-        self.dbname=dbname
-        self.user=user
-        self.password =password
+    def __init__(self,embeddingModel,dbname=None,user=None,password=None):
+        if dbname is None:
+            self.dbname=DBNAME
+        else:
+            self.dbname=dbname        
+        if DBUSER is None:
+            self.user=DBUSER
+        else:
+            self.user=user
+        if DBPASS is None:
+            self.password=DBPASS
+        else:
+            self.password=password   
+
         self.embeddingModel=embeddingModel
 
     def __iter__(self):
@@ -563,7 +573,15 @@ class Graph:
 ```
 
 ```python
-def getSchemaGraph(dbname=DBNAME,user=DBUSER,password=DBPASS):
+def getSchemaGraph(dbname=None,user=None,password=None):
+    
+    if dbname is None:
+        dbname=DBNAME
+    if DBUSER is None:
+        user=DBUSER
+    if DBPASS is None:
+        password=DBPASS
+    
     #Output: A Schema Graph G  with the structure below:
     # G['node'] = edges
     # G['table'] = { 'foreign_table' : (direction, column, foreign_column) }
@@ -1192,7 +1210,7 @@ if STEP_BY_STEP:
         print(j+1,'ª QM')           
 
         print('Schema Score:',"%.8f" % schemascore,
-            '\nValue Score: ',"%.8f" % valuescore,
+            '\nValue Score: ',"%.20f" % valuescore,
             '\n|M|: ',"%02d (Não considerado para calcular o total score)" % len(M),
             '\nTotal Score: ',"%.8f" % score)
         pp(M)
@@ -1271,8 +1289,8 @@ class CandidateNetwork(Graph):
         for (keyword_match,alias),(neighbour_keyword_match,neighbour_alias) in self.edges():
             yield (keyword_match,neighbour_keyword_match)
     
-    def __eq__(self, other : CandidateNetwork):
-        return hash(self)==hash(other)
+    def __eq__(self, other):
+        return hash(self)==hash(other) and isinstance(other,CandidateNetwork)
     
     #Although this is a multable object, we made the hash function since it is not supposed to change after inserted in the lsit of generated cns
     def __hash__(self):
@@ -1345,7 +1363,7 @@ CandidateNetwork.from_json(cnx.to_json())
 ```
 
 ```python
-def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=5):  
+def CNGraphGen(QM,G,TMax=10,showLog=False,tuplesetSortingOrder = None,topKCNs=1):  
     if showLog:
         print('================================================================================\nSINGLE CN')
         print('Tmax ',TMax)
@@ -1472,7 +1490,7 @@ if STEP_BY_STEP:
     print('GENERATING CANDIDATE NETWORKS')  
     RankedCns = MatchCN(attributeHash,G,RankedMq,
                         TMax=TMax,
-                        maxNumCns=topK,
+                        maxNumCns=20,
                         tuplesetSortingOrder=tuplesetSortingOrder)
     print (len(RankedCns),'CANDIDATE NETWORKS CREATED AND RANKED\n')
     
@@ -1560,9 +1578,17 @@ if STEP_BY_STEP:
 ```
 
 ```python
-def execSQL (SQL,dbname=DBNAME,user=DBUSER,password=DBPASS,showResults=True):
+def execSQL (SQL,dbname=None,user=None,password=None,showResults=True):
     #print('RELAVANCE OF SQL:\n')
     #print(SQL)
+    
+    if dbname is None:
+        dbname=DBNAME
+    if DBUSER is None:
+        user=DBUSER
+    if DBPASS is None:
+        password=DBPASS
+    
     from prettytable import PrettyTable
 
     
@@ -1594,7 +1620,13 @@ def execSQL (SQL,dbname=DBNAME,user=DBUSER,password=DBPASS,showResults=True):
 ```python
 import pandas as pd
 URI = 'postgres://imdb:imdb@localhost/'+DBNAME
-def  execSQLPandas(SQL,dbname=DBNAME,user=DBUSER,password=DBPASS):
+def  execSQLPandas(SQL,dbname=None,user=None,password=None):
+    if dbname is None:
+        dbname=DBNAME
+    if DBUSER is None:
+        user=DBUSER
+    if DBPASS is None:
+        password=DBPASS    
     df=pd.read_sql(SQL, URI)
     if len(df)>0:
         display(df)
