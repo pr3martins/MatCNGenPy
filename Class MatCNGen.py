@@ -15,16 +15,16 @@
 # ---
 
 # +
-DBNAME = 'imdb_subset_coffman'
+DBNAME = 'mondial_coffman'
 DBUSER = 'imdb'
 DBPASS = 'imdb'
 EMBEDDINGFILE = "word_embeddings/word2vec/GoogleNews-vectors-negative300.bin"
-QUERYSETFILE ='querysets/queryset_imdb_coffman_revised.txt'
-GOLDEN_CANDIDATE_NETWORKS_PATH ='golden_candidate_networks/imdb_coffman_revised'
+QUERYSETFILE ='querysets/queryset_mondial_coffman_original.txt'
+GOLDEN_CANDIDATE_NETWORKS_PATH ='golden_candidate_networks/mondial_coffman'
 
 STEP_BY_STEP = True
-PREPROCESSING = False
-CUSTOM_QUERY = ('title','james','bond')
+PREPROCESSING = True
+CUSTOM_QUERY = ('poland', 'cape', 'verde', 'organization')
 
 
 # -
@@ -540,6 +540,12 @@ class Graph:
                                                          level=level+1,
                                                          direction='<',
                                                          two_way_transversal=two_way_transversal)   
+    
+    
+    def leaves(self):
+        for vertice in self.vertices():            
+            if sum(1 for neighbour in self.neighbours(vertice)) == 1:
+                yield vertice
     
     def get_starting_vertex(self):
         return next(iter(self.vertices()))
@@ -1321,7 +1327,13 @@ CandidateNetwork.from_json(cnx.to_json())
 
 def sum_norm_attributes(directed_neighbor):
     direction,adj_table = directed_neighbor
+    if adj_table not in attributeHash:
+        return 0
     return sum(Norm for (Norm,numDistinctWords,numWords,maxFrequency) in attributeHash[adj_table].values())
+
+
+sorted([(sum(Norm for (Norm,numDistinctWords,numWords,maxFrequency) in attributeHash[table].values()),
+  table) for table in attributeHash],reverse=True)
 
 
 def CNGraphGen(QM,G,TMax=10,showLog=False,directed_neighbor_sorting = None,topKCNsPerQM=2):  
@@ -1381,16 +1393,20 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,directed_neighbor_sorting = None,topKC
                             if (new_CN not in F and
                                 new_CN not in returnedCNs and
                                 len(new_CN)<=TMax and
-                                new_CN.isSound()):
+                                new_CN.isSound() and
+                                len(list(new_CN.leaves())) <= len(QM)):
 #                                 print('Adding ',adj_keyword_match,' to current CN')
                                 if new_CN.minimal_cover(QM):
+                                    print('Found CN')
+                                    print(new_CN)
 #                                     print('GENERATED THE FIRST ONE')
                                     if len(returnedCNs)<topKCNsPerQM:
                                         returnedCNs.add(new_CN)
-                                    else:
+                                    
+                                    if len(returnedCNs)==topKCNsPerQM:
                                         return returnedCNs
-                                else:
-                                    #print('Adding\n{}\n'.format(new_CN))
+                                elif len(new_CN)<TMax:
+#                                     print('Adding\n{}\n'.format(new_CN))
                                     F.append(new_CN)
                                     
                 
@@ -1400,7 +1416,11 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,directed_neighbor_sorting = None,topKC
                 adj_keyword_match = KeywordMatch(adj_table)
                 vertex_v = new_CN.add_vertex(adj_keyword_match)
                 new_CN.add_edge(vertex_u,vertex_v,edge_direction=direction)
-                if new_CN not in F and new_CN not in returnedCNs and len(new_CN)<=TMax and new_CN.isSound():
+                if (new_CN not in F and
+                    new_CN not in returnedCNs and
+                    len(new_CN)<TMax and
+                    new_CN.isSound() and 
+                    len(list(new_CN.leaves())) <= len(QM)):
 #                     print('Adding ',adj_keyword_match,' to current CN')
 #                     print('Adding\n{}\n'.format(new_CN))
                     F.append(new_CN)
@@ -1409,12 +1429,11 @@ def CNGraphGen(QM,G,TMax=10,showLog=False,directed_neighbor_sorting = None,topKC
 
 if STEP_BY_STEP:
     TMax=5
-    topK = 10    
-    
+   
     (QM,score,valuescore,schemascore) = RankedMq[0]
     print('GENERATING CNs FOR QM:',QM)
     
-    Cns = CNGraphGen(QM,G,TMax=TMax)
+    Cns = CNGraphGen(QM,G,TMax=TMax,topKCNsPerQM=20)
     
     for j, Cn in enumerate(Cns):
         print(j+1,'ª CN',
@@ -1422,15 +1441,21 @@ if STEP_BY_STEP:
               '\nTotal Score: ',"%.8f" % (score/len(Cn)))
         print(Cn)
 
+for candidate_network in Cns:
+    if execSQL(getSQLfromCN(G,candidate_network,rowslimit=1), showResults=False,):
+        print(candidate_network)
+
 
 def MatchCN(attributeHash,G,RankedMq,TMax=10,maxNumCns=20,topKCNsPerQM=2,directed_neighbor_sorting=None,showLog=False):    
     UnrankedCns = []    
     generated_cns=[]
     
-    for  (QM,score,valuescore,schemascore) in RankedMq:
+    for i,(QM,score,valuescore,schemascore) in enumerate(RankedMq):
+        if showLog:
+            print('{}ª QM:\n{}\n'.format(i+1,QM))
         Cns = CNGraphGen(QM,G,TMax=TMax,topKCNsPerQM=topKCNsPerQM,directed_neighbor_sorting=directed_neighbor_sorting)
         if showLog:
-            print('QM:\n{}\nCns:'.format(QM))
+            print('Cns:')
             pp(Cns)
         if len(UnrankedCns)>=maxNumCns:
             break
@@ -1453,7 +1478,8 @@ if STEP_BY_STEP:
     print('GENERATING CANDIDATE NETWORKS')  
     RankedCns = MatchCN(attributeHash,G,RankedMq,
                         TMax=TMax,
-                        maxNumCns=20)
+                        maxNumCns=20,
+                       showLog=True)
     print (len(RankedCns),'CANDIDATE NETWORKS CREATED AND RANKED\n')
     
     for (j, (Cn,score,valuescore,schemascore) ) in enumerate(RankedCns):
@@ -1638,7 +1664,7 @@ def keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
         
         if showLog:
             for (j, (QM,score,valuescore,schemascore) ) in enumerate(RankedMq[:topK]):
-                print(j+1,'ª QM')           
+                print(i+1,'ª Q ',j+1,'ª QM')           
                 
                 print('Schema Score:',"%.8f" % schemascore,
                       '\nValue Score: ',"%.8f" % valuescore,
@@ -1679,10 +1705,20 @@ def keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
 results = keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
                        showLog=True,
                        querySetFileName=QUERYSETFILE,
-                       topK=20,
+                       topK=10,
                        topKCNsPerQM=2,
                        TMax=5,
                        TMaxQM=3,
+                       similarities=Similarities(wordEmbeddingsModel,attributeHash,G,useEmb10Sim=False)
+                      )
+
+results2 = keywordSearch(wordHash,attributeHash,wordEmbeddingsModel,
+                       showLog=True,
+                       topK=10,
+                       topKCNsPerQM=7,
+                       TMax=5,
+                       TMaxQM=3,
+                        queryset=getQuerySets()[35:45],
                        similarities=Similarities(wordEmbeddingsModel,attributeHash,G,useEmb10Sim=False)
                       )
 
@@ -1748,21 +1784,8 @@ def setGoldenCandidateNetworks(result,golden_cns=None):
                 return golden_cns
     return golden_cns
 
-# +
-#gs = setGoldenCandidateNetworks(results,golden_cns)
+gs = setGoldenCandidateNetworks(results,golden_cns)
 
-# +
-cnx=CandidateNetwork.from_str('''NAME.v(name{reeves})
-	<CAST_INFO
-		>TITLE
-			<CAST_INFO
-				>NAME.v(name{wachowski})''')
-cnx
-
-getSQLfromCN(G,cnx,showEvaluationFields=True)
-
-
-# -
 
 def generateGoldenCNFiles(golden_standards,path=None):  
     if path is None:
@@ -1811,7 +1834,11 @@ def get_relevant_positions(results,golden_stantards):
 
 e = get_relevant_positions(results,golden_cns)
 
+golden_cns[('slovakia', 'hungary')]
+
 [(i,Q) for i,Q in enumerate(e) if e[Q] == (-1,-1)]
+
+
 
 for Q in e:
     if e[Q] == (-1,-1):
@@ -1833,6 +1860,10 @@ def precision_at(position_list,threshold = 3):
 # -
 
 e
+
+
+
+print(getSQLfromCN(G,golden_cns[('slovakia', 'german')],showEvaluationFields=True))
 
 position_list = [idx for idx,non_empty_idx in e.values()]
 non_empty_position_list = [non_empty_idx for idx,non_empty_idx in e.values()]
