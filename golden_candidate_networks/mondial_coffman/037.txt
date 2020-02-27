@@ -1,70 +1,6 @@
 {
-    "query": [
-        "saint",
-        "kitts",
-        "cambodia"
-    ],
     "candidate_network": [
         {
-            "outgoing_neighbours": [
-                "t3",
-                "t5"
-            ],
-            "keyword_match": {
-                "table": "is_member",
-                "value_filter": [],
-                "schema_filter": []
-            },
-            "alias": "t4",
-            "incoming_neighbours": []
-        },
-        {
-            "outgoing_neighbours": [
-                "t3",
-                "t1"
-            ],
-            "keyword_match": {
-                "table": "is_member",
-                "value_filter": [],
-                "schema_filter": []
-            },
-            "alias": "t2",
-            "incoming_neighbours": []
-        },
-        {
-            "outgoing_neighbours": [],
-            "keyword_match": {
-                "table": "organization",
-                "value_filter": [],
-                "schema_filter": []
-            },
-            "alias": "t3",
-            "incoming_neighbours": [
-                "t4",
-                "t2"
-            ]
-        },
-        {
-            "outgoing_neighbours": [],
-            "keyword_match": {
-                "table": "country",
-                "value_filter": [
-                    {
-                        "attribute": "name",
-                        "keywords": [
-                            "cambodia"
-                        ]
-                    }
-                ],
-                "schema_filter": []
-            },
-            "alias": "t5",
-            "incoming_neighbours": [
-                "t4"
-            ]
-        },
-        {
-            "outgoing_neighbours": [],
             "keyword_match": {
                 "table": "country",
                 "value_filter": [
@@ -78,10 +14,74 @@
                 ],
                 "schema_filter": []
             },
-            "alias": "t1",
+            "outgoing_neighbours": [],
             "incoming_neighbours": [
                 "t2"
-            ]
+            ],
+            "alias": "t1"
+        },
+        {
+            "keyword_match": {
+                "table": "organization",
+                "value_filter": [],
+                "schema_filter": []
+            },
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [
+                "t2",
+                "t4"
+            ],
+            "alias": "t3"
+        },
+        {
+            "keyword_match": {
+                "table": "is_member",
+                "value_filter": [],
+                "schema_filter": []
+            },
+            "outgoing_neighbours": [
+                "t3",
+                "t1"
+            ],
+            "incoming_neighbours": [],
+            "alias": "t2"
+        },
+        {
+            "keyword_match": {
+                "table": "country",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "cambodia"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [
+                "t4"
+            ],
+            "alias": "t5"
+        },
+        {
+            "keyword_match": {
+                "table": "is_member",
+                "value_filter": [],
+                "schema_filter": []
+            },
+            "outgoing_neighbours": [
+                "t3",
+                "t5"
+            ],
+            "incoming_neighbours": [],
+            "alias": "t4"
         }
+    ],
+    "query": [
+        "saint",
+        "kitts",
+        "cambodia"
     ]
 }

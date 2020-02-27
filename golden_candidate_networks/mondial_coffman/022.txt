@@ -1,11 +1,19 @@
 {
-    "query": [
-        "mongolia",
-        "china"
-    ],
     "candidate_network": [
         {
-            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "borders",
+                "value_filter": [],
+                "schema_filter": []
+            },
+            "outgoing_neighbours": [
+                "t1",
+                "t3"
+            ],
+            "incoming_neighbours": [],
+            "alias": "t2"
+        },
+        {
             "keyword_match": {
                 "table": "country",
                 "value_filter": [
@@ -18,26 +26,13 @@
                 ],
                 "schema_filter": []
             },
-            "alias": "t1",
+            "outgoing_neighbours": [],
             "incoming_neighbours": [
                 "t2"
-            ]
-        },
-        {
-            "outgoing_neighbours": [
-                "t1",
-                "t3"
             ],
-            "keyword_match": {
-                "table": "borders",
-                "value_filter": [],
-                "schema_filter": []
-            },
-            "alias": "t2",
-            "incoming_neighbours": []
+            "alias": "t1"
         },
         {
-            "outgoing_neighbours": [],
             "keyword_match": {
                 "table": "country",
                 "value_filter": [
@@ -50,10 +45,15 @@
                 ],
                 "schema_filter": []
             },
-            "alias": "t3",
+            "outgoing_neighbours": [],
             "incoming_neighbours": [
                 "t2"
-            ]
+            ],
+            "alias": "t3"
         }
+    ],
+    "query": [
+        "mongolia",
+        "china"
     ]
 }

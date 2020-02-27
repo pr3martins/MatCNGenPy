@@ -1,13 +1,6 @@
 {
-    "query": [
-        "suriname",
-        "ethnic_group"
-    ],
     "candidate_network": [
         {
-            "outgoing_neighbours": [
-                "t2"
-            ],
             "keyword_match": {
                 "table": "ethnic_group",
                 "value_filter": [],
@@ -20,16 +13,18 @@
                     }
                 ]
             },
-            "alias": "t1",
-            "incoming_neighbours": []
+            "outgoing_neighbours": [
+                "t1"
+            ],
+            "incoming_neighbours": [],
+            "alias": "t2"
         },
         {
-            "outgoing_neighbours": [],
             "keyword_match": {
                 "table": "country",
                 "value_filter": [
                     {
-                        "attribute": "*",
+                        "attribute": "name",
                         "keywords": [
                             "suriname"
                         ]
@@ -37,10 +32,15 @@
                 ],
                 "schema_filter": []
             },
-            "alias": "t2",
+            "outgoing_neighbours": [],
             "incoming_neighbours": [
-                "t1"
-            ]
+                "t2"
+            ],
+            "alias": "t1"
         }
+    ],
+    "query": [
+        "suriname",
+        "ethnic_group"
     ]
 }

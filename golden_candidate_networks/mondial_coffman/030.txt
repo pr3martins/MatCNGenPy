@@ -1,11 +1,6 @@
 {
-    "query": [
-        "poland",
-        "language"
-    ],
     "candidate_network": [
         {
-            "outgoing_neighbours": [],
             "keyword_match": {
                 "table": "country",
                 "value_filter": [
@@ -18,15 +13,13 @@
                 ],
                 "schema_filter": []
             },
-            "alias": "t1",
+            "outgoing_neighbours": [],
             "incoming_neighbours": [
                 "t2"
-            ]
+            ],
+            "alias": "t1"
         },
         {
-            "outgoing_neighbours": [
-                "t1"
-            ],
             "keyword_match": {
                 "table": "language",
                 "value_filter": [],
@@ -39,8 +32,15 @@
                     }
                 ]
             },
-            "alias": "t2",
-            "incoming_neighbours": []
+            "outgoing_neighbours": [
+                "t1"
+            ],
+            "incoming_neighbours": [],
+            "alias": "t2"
         }
+    ],
+    "query": [
+        "poland",
+        "language"
     ]
 }

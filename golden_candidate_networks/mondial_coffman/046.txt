@@ -1,45 +1,38 @@
 {
-    "query": [
-        "hutu",
-        "africa"
-    ],
     "candidate_network": [
         {
-            "outgoing_neighbours": [],
             "keyword_match": {
                 "table": "continent",
-                "value_filter": [],
-                "schema_filter": [
+                "value_filter": [
                     {
-                        "attribute": "*",
+                        "attribute": "name",
                         "keywords": [
                             "africa"
                         ]
                     }
-                ]
+                ],
+                "schema_filter": []
             },
-            "alias": "t1",
+            "outgoing_neighbours": [],
             "incoming_neighbours": [
                 "t2"
-            ]
+            ],
+            "alias": "t1"
         },
         {
-            "outgoing_neighbours": [
-                "t1",
-                "t3"
-            ],
             "keyword_match": {
                 "table": "encompasses",
                 "value_filter": [],
                 "schema_filter": []
             },
-            "alias": "t2",
-            "incoming_neighbours": []
-        },
-        {
             "outgoing_neighbours": [
+                "t1",
                 "t3"
             ],
+            "incoming_neighbours": [],
+            "alias": "t2"
+        },
+        {
             "keyword_match": {
                 "table": "ethnic_group",
                 "value_filter": [
@@ -52,21 +45,28 @@
                 ],
                 "schema_filter": []
             },
-            "alias": "t4",
-            "incoming_neighbours": []
+            "outgoing_neighbours": [
+                "t3"
+            ],
+            "incoming_neighbours": [],
+            "alias": "t4"
         },
         {
-            "outgoing_neighbours": [],
             "keyword_match": {
                 "table": "country",
                 "value_filter": [],
                 "schema_filter": []
             },
-            "alias": "t3",
+            "outgoing_neighbours": [],
             "incoming_neighbours": [
                 "t2",
                 "t4"
-            ]
+            ],
+            "alias": "t3"
         }
+    ],
+    "query": [
+        "hutu",
+        "africa"
     ]
 }

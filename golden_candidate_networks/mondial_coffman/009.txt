@@ -1,11 +1,6 @@
 {
-    "query": [
-        "city",
-        "glendale"
-    ],
     "candidate_network": [
         {
-            "outgoing_neighbours": [],
             "keyword_match": {
                 "table": "city",
                 "value_filter": [
@@ -25,8 +20,13 @@
                     }
                 ]
             },
-            "alias": "t1",
-            "incoming_neighbours": []
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [],
+            "alias": "t1"
         }
+    ],
+    "query": [
+        "city",
+        "glendale"
     ]
 }
