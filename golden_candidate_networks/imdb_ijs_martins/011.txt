@@ -1,0 +1,69 @@
+{
+    "query": [
+        "actor",
+        "draco",
+        "harry",
+        "potter"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "value_filter": [],
+                "table": "actors",
+                "schema_filter": [
+                    {
+                        "attribute": "*",
+                        "keywords": [
+                            "actor"
+                        ]
+                    }
+                ]
+            },
+            "alias": "t3"
+        },
+        {
+            "outgoing_neighbours": [
+                "t3",
+                "t1"
+            ],
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "value_filter": [
+                    {
+                        "attribute": "role",
+                        "keywords": [
+                            "draco"
+                        ]
+                    }
+                ],
+                "table": "roles",
+                "schema_filter": []
+            },
+            "alias": "t2"
+        },
+        {
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "harry",
+                            "potter"
+                        ]
+                    }
+                ],
+                "table": "movies",
+                "schema_filter": []
+            },
+            "alias": "t1"
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "query": [
+        "protagonists",
+        "happened",
+        "one",
+        "night"
+    ],
+    "candidate_network": [
+        {
+            "alias": "t1",
+            "outgoing_neighbours": [
+                "t2"
+            ],
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "table": "roles",
+                "value_filter": [],
+                "schema_filter": [
+                    {
+                        "attribute": "role",
+                        "keywords": [
+                            "protagonists"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "t2",
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [
+                "t1"
+            ],
+            "keyword_match": {
+                "table": "movies",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "happened",
+                            "one",
+                            "night"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        }
+    ]
+}

@@ -1,0 +1,87 @@
+{
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "alias": "t5",
+            "incoming_neighbours": [
+                "t4"
+            ],
+            "keyword_match": {
+                "table": "name",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "herbie"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        },
+        {
+            "outgoing_neighbours": [],
+            "alias": "t1",
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "name",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "dean",
+                            "jones"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        },
+        {
+            "outgoing_neighbours": [
+                "t5",
+                "t3"
+            ],
+            "alias": "t4",
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "table": "cast_info",
+                "value_filter": [],
+                "schema_filter": []
+            }
+        },
+        {
+            "outgoing_neighbours": [
+                "t1",
+                "t3"
+            ],
+            "alias": "t2",
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "table": "cast_info",
+                "value_filter": [],
+                "schema_filter": []
+            }
+        },
+        {
+            "outgoing_neighbours": [],
+            "alias": "t3",
+            "incoming_neighbours": [
+                "t4",
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "title",
+                "value_filter": [],
+                "schema_filter": []
+            }
+        }
+    ],
+    "query": [
+        "dean",
+        "jones",
+        "herbie"
+    ]
+}

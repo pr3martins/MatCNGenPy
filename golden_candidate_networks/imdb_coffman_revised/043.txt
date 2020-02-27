@@ -1,0 +1,61 @@
+{
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "alias": "t3",
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "name",
+                "value_filter": [],
+                "schema_filter": [
+                    {
+                        "attribute": "*",
+                        "keywords": [
+                            "name"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "outgoing_neighbours": [],
+            "alias": "t1",
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "char_name",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "ryan",
+                            "jack"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        },
+        {
+            "outgoing_neighbours": [
+                "t3",
+                "t1"
+            ],
+            "alias": "t2",
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "table": "cast_info",
+                "value_filter": [],
+                "schema_filter": []
+            }
+        }
+    ],
+    "query": [
+        "name",
+        "jack",
+        "ryan"
+    ]
+}

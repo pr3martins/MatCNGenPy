@@ -1,0 +1,25 @@
+{
+    "query": [
+        "movie",
+        "spirit"
+    ],
+    "candidate_network": [
+        {
+            "alias": "t1",
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "table": "movies",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "spirit"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        }
+    ]
+}

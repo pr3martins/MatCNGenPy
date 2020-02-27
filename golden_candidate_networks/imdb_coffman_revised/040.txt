@@ -1,0 +1,63 @@
+{
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "alias": "t1",
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "name",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "brent",
+                            "spiner"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        },
+        {
+            "outgoing_neighbours": [],
+            "alias": "t3",
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "title",
+                "value_filter": [
+                    {
+                        "attribute": "title",
+                        "keywords": [
+                            "trek",
+                            "star"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        },
+        {
+            "outgoing_neighbours": [
+                "t1",
+                "t3"
+            ],
+            "alias": "t2",
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "table": "cast_info",
+                "value_filter": [],
+                "schema_filter": []
+            }
+        }
+    ],
+    "query": [
+        "brent",
+        "spiner",
+        "star",
+        "trek"
+    ]
+}

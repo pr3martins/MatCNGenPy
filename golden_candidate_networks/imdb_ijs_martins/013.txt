@@ -1,0 +1,66 @@
+{
+    "query": [
+        "movie",
+        "steven",
+        "spielberg"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "value_filter": [],
+                "table": "movies",
+                "schema_filter": [
+                    {
+                        "attribute": "*",
+                        "keywords": [
+                            "movie"
+                        ]
+                    }
+                ]
+            },
+            "alias": "t1"
+        },
+        {
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "value_filter": [
+                    {
+                        "attribute": "first_name",
+                        "keywords": [
+                            "steven"
+                        ]
+                    },
+                    {
+                        "attribute": "last_name",
+                        "keywords": [
+                            "spielberg"
+                        ]
+                    }
+                ],
+                "table": "directors",
+                "schema_filter": []
+            },
+            "alias": "t3"
+        },
+        {
+            "outgoing_neighbours": [
+                "t1",
+                "t3"
+            ],
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "value_filter": [],
+                "table": "movies_directors",
+                "schema_filter": []
+            },
+            "alias": "t2"
+        }
+    ]
+}

@@ -1,0 +1,26 @@
+{
+    "query": [
+        "caribbean",
+        "economic"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "organization",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "caribbean",
+                            "economic"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t1",
+            "incoming_neighbours": []
+        }
+    ]
+}

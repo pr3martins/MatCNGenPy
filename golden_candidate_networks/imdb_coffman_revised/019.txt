@@ -1,0 +1,26 @@
+{
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "alias": "t1",
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "table": "title",
+                "value_filter": [
+                    {
+                        "attribute": "title",
+                        "keywords": [
+                            "princess",
+                            "bride"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        }
+    ],
+    "query": [
+        "princess",
+        "bride"
+    ]
+}

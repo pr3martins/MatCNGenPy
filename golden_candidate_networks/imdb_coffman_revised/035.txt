@@ -1,0 +1,50 @@
+{
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "alias": "t2",
+            "incoming_neighbours": [
+                "t1"
+            ],
+            "keyword_match": {
+                "table": "title",
+                "value_filter": [],
+                "schema_filter": [
+                    {
+                        "attribute": "*",
+                        "keywords": [
+                            "title"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "outgoing_neighbours": [
+                "t2"
+            ],
+            "alias": "t1",
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "table": "movie_info",
+                "value_filter": [
+                    {
+                        "attribute": "info",
+                        "keywords": [
+                            "kid",
+                            "here's",
+                            "looking"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        }
+    ],
+    "query": [
+        "title",
+        "here's",
+        "looking",
+        "kid"
+    ]
+}

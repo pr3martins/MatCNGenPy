@@ -1,0 +1,82 @@
+{
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "alias": "t3",
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "name",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "crowe",
+                            "russell"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        },
+        {
+            "outgoing_neighbours": [],
+            "alias": "t4",
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "title",
+                "value_filter": [
+                    {
+                        "attribute": "title",
+                        "keywords": [
+                            "gladiator"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        },
+        {
+            "outgoing_neighbours": [],
+            "alias": "t1",
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "char_name",
+                "value_filter": [],
+                "schema_filter": [
+                    {
+                        "attribute": "*",
+                        "keywords": [
+                            "char_name"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "outgoing_neighbours": [
+                "t3",
+                "t4",
+                "t1"
+            ],
+            "alias": "t2",
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "table": "cast_info",
+                "value_filter": [],
+                "schema_filter": []
+            }
+        }
+    ],
+    "query": [
+        "russell",
+        "crowe",
+        "gladiator",
+        "char_name"
+    ]
+}

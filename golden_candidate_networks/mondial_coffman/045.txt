@@ -1,0 +1,85 @@
+{
+    "query": [
+        "libya",
+        "australia"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [
+                "t3",
+                "t5"
+            ],
+            "keyword_match": {
+                "table": "is_member",
+                "value_filter": [],
+                "schema_filter": []
+            },
+            "alias": "t4",
+            "incoming_neighbours": []
+        },
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "country",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "libya"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t1",
+            "incoming_neighbours": [
+                "t2"
+            ]
+        },
+        {
+            "outgoing_neighbours": [
+                "t1",
+                "t3"
+            ],
+            "keyword_match": {
+                "table": "is_member",
+                "value_filter": [],
+                "schema_filter": []
+            },
+            "alias": "t2",
+            "incoming_neighbours": []
+        },
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "organization",
+                "value_filter": [],
+                "schema_filter": []
+            },
+            "alias": "t3",
+            "incoming_neighbours": [
+                "t4",
+                "t2"
+            ]
+        },
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "country",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "australia"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t5",
+            "incoming_neighbours": [
+                "t4"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,72 @@
+{
+    "query": [
+        "hutu",
+        "africa"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "continent",
+                "value_filter": [],
+                "schema_filter": [
+                    {
+                        "attribute": "*",
+                        "keywords": [
+                            "africa"
+                        ]
+                    }
+                ]
+            },
+            "alias": "t1",
+            "incoming_neighbours": [
+                "t2"
+            ]
+        },
+        {
+            "outgoing_neighbours": [
+                "t1",
+                "t3"
+            ],
+            "keyword_match": {
+                "table": "encompasses",
+                "value_filter": [],
+                "schema_filter": []
+            },
+            "alias": "t2",
+            "incoming_neighbours": []
+        },
+        {
+            "outgoing_neighbours": [
+                "t3"
+            ],
+            "keyword_match": {
+                "table": "ethnic_group",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "hutu"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t4",
+            "incoming_neighbours": []
+        },
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "country",
+                "value_filter": [],
+                "schema_filter": []
+            },
+            "alias": "t3",
+            "incoming_neighbours": [
+                "t2",
+                "t4"
+            ]
+        }
+    ]
+}

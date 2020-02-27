@@ -6,7 +6,7 @@ actors of Friends
 actors in Citizen Kane
 Lucy Liu movies
 films of Robert Downey Jr
-name of director of Psycho
+director of Psycho
 Will Smith movies
 actor Draco Harry Potter
 Keanu Reeves movies
@@ -14,12 +14,12 @@ Movie Steven Spielberg
 James Bond actor name
 protagonist of the sound of music
 character Forrest Gump
-movie Social Network
+movie spirit
 actor in The Fellowship of the Ring and The Return of the King
 actors of X-Men
 Matilda actress name
-Scissorhands director name
+Scissorhands director
 movie pierce brosnan james bond
-person matrix reloaded
+character matrix reloaded
 movie john travolta
 Miyazaki Director

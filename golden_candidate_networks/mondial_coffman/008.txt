@@ -1,0 +1,24 @@
+{
+    "query": [
+        "xiaogan"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "city",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "xiaogan"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t1",
+            "incoming_neighbours": []
+        }
+    ]
+}

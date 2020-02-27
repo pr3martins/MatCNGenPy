@@ -1,0 +1,76 @@
+{
+    "query": [
+        "king",
+        "kong",
+        "actor",
+        "jack",
+        "black"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "value_filter": [
+                    {
+                        "attribute": "first_name",
+                        "keywords": [
+                            "jack"
+                        ]
+                    },
+                    {
+                        "attribute": "last_name",
+                        "keywords": [
+                            "black"
+                        ]
+                    }
+                ],
+                "table": "actors",
+                "schema_filter": [
+                    {
+                        "attribute": "*",
+                        "keywords": [
+                            "actor"
+                        ]
+                    }
+                ]
+            },
+            "alias": "t1"
+        },
+        {
+            "outgoing_neighbours": [
+                "t1",
+                "t3"
+            ],
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "value_filter": [],
+                "table": "roles",
+                "schema_filter": []
+            },
+            "alias": "t2"
+        },
+        {
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "kong",
+                            "king"
+                        ]
+                    }
+                ],
+                "table": "movies",
+                "schema_filter": []
+            },
+            "alias": "t3"
+        }
+    ]
+}

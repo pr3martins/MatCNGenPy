@@ -1,0 +1,46 @@
+{
+    "query": [
+        "mongolia",
+        "republic"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "politics",
+                "value_filter": [
+                    {
+                        "attribute": "government",
+                        "keywords": [
+                            "republic"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t1",
+            "incoming_neighbours": []
+        },
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "country",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "mongolia"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t2",
+            "incoming_neighbours": [
+                "t1"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,59 @@
+{
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "alias": "t3",
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "name",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "hamill"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        },
+        {
+            "outgoing_neighbours": [
+                "t1",
+                "t3"
+            ],
+            "alias": "t2",
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "table": "cast_info",
+                "value_filter": [],
+                "schema_filter": []
+            }
+        },
+        {
+            "outgoing_neighbours": [],
+            "alias": "t1",
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "char_name",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "skywalker"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        }
+    ],
+    "query": [
+        "hamill",
+        "skywalker"
+    ]
+}

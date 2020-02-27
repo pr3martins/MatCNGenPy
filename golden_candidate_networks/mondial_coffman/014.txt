@@ -1,0 +1,24 @@
+{
+    "query": [
+        "asauad"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "desert",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "asauad"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t1",
+            "incoming_neighbours": []
+        }
+    ]
+}

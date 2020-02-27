@@ -1,0 +1,26 @@
+{
+    "query": [
+        "lake",
+        "kariba"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "lake",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "lake",
+                            "kariba"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t1",
+            "incoming_neighbours": []
+        }
+    ]
+}

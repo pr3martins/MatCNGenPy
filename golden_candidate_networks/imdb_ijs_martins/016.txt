@@ -1,0 +1,34 @@
+{
+    "query": [
+        "character",
+        "forrest",
+        "gump"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "value_filter": [
+                    {
+                        "attribute": "role",
+                        "keywords": [
+                            "gump",
+                            "forrest"
+                        ]
+                    }
+                ],
+                "table": "roles",
+                "schema_filter": [
+                    {
+                        "attribute": "*",
+                        "keywords": [
+                            "character"
+                        ]
+                    }
+                ]
+            },
+            "alias": "t1"
+        }
+    ]
+}

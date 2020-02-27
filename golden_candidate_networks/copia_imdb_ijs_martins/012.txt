@@ -1,0 +1,66 @@
+{
+    "query": [
+        "keanu",
+        "reeves",
+        "movies"
+    ],
+    "candidate_network": [
+        {
+            "alias": "t1",
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "movies",
+                "value_filter": [],
+                "schema_filter": [
+                    {
+                        "attribute": "*",
+                        "keywords": [
+                            "movies"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "alias": "t3",
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "table": "actors",
+                "value_filter": [
+                    {
+                        "attribute": "last_name",
+                        "keywords": [
+                            "reeves"
+                        ]
+                    },
+                    {
+                        "attribute": "first_name",
+                        "keywords": [
+                            "keanu"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        },
+        {
+            "alias": "t2",
+            "outgoing_neighbours": [
+                "t3",
+                "t1"
+            ],
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "table": "roles",
+                "value_filter": [],
+                "schema_filter": []
+            }
+        }
+    ]
+}

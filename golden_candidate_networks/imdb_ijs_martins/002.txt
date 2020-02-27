@@ -1,0 +1,53 @@
+{
+    "query": [
+        "characters",
+        "johnny",
+        "depp"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [
+                "t1"
+            ],
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "value_filter": [],
+                "table": "roles",
+                "schema_filter": [
+                    {
+                        "attribute": "*",
+                        "keywords": [
+                            "characters"
+                        ]
+                    }
+                ]
+            },
+            "alias": "t2"
+        },
+        {
+            "outgoing_neighbours": [],
+            "incoming_neighbours": [
+                "t2"
+            ],
+            "keyword_match": {
+                "value_filter": [
+                    {
+                        "attribute": "first_name",
+                        "keywords": [
+                            "johnny"
+                        ]
+                    },
+                    {
+                        "attribute": "last_name",
+                        "keywords": [
+                            "depp"
+                        ]
+                    }
+                ],
+                "table": "actors",
+                "schema_filter": []
+            },
+            "alias": "t1"
+        }
+    ]
+}

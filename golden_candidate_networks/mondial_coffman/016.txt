@@ -1,0 +1,28 @@
+{
+    "query": [
+        "arab",
+        "cooperation",
+        "council"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "organization",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "cooperation",
+                            "arab",
+                            "council"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t1",
+            "incoming_neighbours": []
+        }
+    ]
+}

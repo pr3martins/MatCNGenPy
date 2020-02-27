@@ -1,0 +1,48 @@
+{
+    "query": [
+        "uzbekistan",
+        "eastern",
+        "orthodox"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "country",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "uzbekistan"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t1",
+            "incoming_neighbours": [
+                "t2"
+            ]
+        },
+        {
+            "outgoing_neighbours": [
+                "t1"
+            ],
+            "keyword_match": {
+                "table": "religion",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "orthodox",
+                            "eastern"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t2",
+            "incoming_neighbours": []
+        }
+    ]
+}

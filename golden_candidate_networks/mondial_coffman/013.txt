@@ -1,0 +1,26 @@
+{
+    "query": [
+        "arabian",
+        "sea"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "sea",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "sea",
+                            "arabian"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t1",
+            "incoming_neighbours": []
+        }
+    ]
+}

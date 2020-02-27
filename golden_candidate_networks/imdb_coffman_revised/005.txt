@@ -1,0 +1,26 @@
+{
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "alias": "t1",
+            "incoming_neighbours": [],
+            "keyword_match": {
+                "table": "name",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "ford",
+                            "harrison"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            }
+        }
+    ],
+    "query": [
+        "harrison",
+        "ford"
+    ]
+}

@@ -1,0 +1,24 @@
+{
+    "query": [
+        "niger"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "river",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "niger"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t1",
+            "incoming_neighbours": []
+        }
+    ]
+}

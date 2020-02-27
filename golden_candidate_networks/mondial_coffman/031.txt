@@ -1,0 +1,46 @@
+{
+    "query": [
+        "spain",
+        "galician"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "country",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "spain"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t1",
+            "incoming_neighbours": [
+                "t2"
+            ]
+        },
+        {
+            "outgoing_neighbours": [
+                "t1"
+            ],
+            "keyword_match": {
+                "table": "language",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "galician"
+                        ]
+                    }
+                ],
+                "schema_filter": []
+            },
+            "alias": "t2",
+            "incoming_neighbours": []
+        }
+    ]
+}

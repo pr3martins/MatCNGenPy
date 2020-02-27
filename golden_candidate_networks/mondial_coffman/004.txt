@@ -1,0 +1,32 @@
+{
+    "query": [
+        "country",
+        "china"
+    ],
+    "candidate_network": [
+        {
+            "outgoing_neighbours": [],
+            "keyword_match": {
+                "table": "country",
+                "value_filter": [
+                    {
+                        "attribute": "name",
+                        "keywords": [
+                            "china"
+                        ]
+                    }
+                ],
+                "schema_filter": [
+                    {
+                        "attribute": "*",
+                        "keywords": [
+                            "country"
+                        ]
+                    }
+                ]
+            },
+            "alias": "t1",
+            "incoming_neighbours": []
+        }
+    ]
+}
