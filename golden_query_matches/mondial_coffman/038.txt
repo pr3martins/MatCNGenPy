@@ -1,0 +1,47 @@
+{
+    "query_match": [
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "marshall",
+                        "islands"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        },
+        {
+            "table": "organization",
+            "value_filter": [],
+            "schema_filter": [
+                {
+                    "attribute": "*",
+                    "keywords": [
+                        "organization"
+                    ]
+                }
+            ]
+        },
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "grenadines"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "marshall",
+        "islands",
+        "grenadines",
+        "organization"
+    ]
+}

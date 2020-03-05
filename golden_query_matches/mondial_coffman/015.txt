@@ -1,0 +1,19 @@
+{
+    "query_match": [
+        {
+            "table": "island",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "sardegna"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "sardegna"
+    ]
+}

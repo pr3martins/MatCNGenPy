@@ -1,0 +1,32 @@
+{
+    "query_match": [
+        {
+            "table": "continent",
+            "value_filter": [],
+            "schema_filter": [
+                {
+                    "attribute": "*",
+                    "keywords": [
+                        "asia"
+                    ]
+                }
+            ]
+        },
+        {
+            "table": "ethnic_group",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "uzbek"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "uzbek",
+        "asia"
+    ]
+}

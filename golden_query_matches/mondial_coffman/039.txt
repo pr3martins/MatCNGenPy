@@ -1,0 +1,49 @@
+{
+    "query_match": [
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "cote",
+                        "divoire"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        },
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "republic",
+                        "czech"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        },
+        {
+            "table": "organization",
+            "value_filter": [],
+            "schema_filter": [
+                {
+                    "attribute": "*",
+                    "keywords": [
+                        "organization"
+                    ]
+                }
+            ]
+        }
+    ],
+    "query": [
+        "czech",
+        "republic",
+        "cote",
+        "divoire",
+        "organization"
+    ]
+}

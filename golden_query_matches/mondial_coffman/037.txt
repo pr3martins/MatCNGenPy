@@ -1,0 +1,34 @@
+{
+    "query_match": [
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "saint",
+                        "kitts"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        },
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "cambodia"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "saint",
+        "kitts",
+        "cambodia"
+    ]
+}

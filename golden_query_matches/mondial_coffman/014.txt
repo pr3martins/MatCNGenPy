@@ -1,0 +1,19 @@
+{
+    "query_match": [
+        {
+            "table": "desert",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "asauad"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "asauad"
+    ]
+}

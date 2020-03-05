@@ -1,0 +1,32 @@
+{
+    "query_match": [
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "slovakia"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        },
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "hungary"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "slovakia",
+        "hungary"
+    ]
+}

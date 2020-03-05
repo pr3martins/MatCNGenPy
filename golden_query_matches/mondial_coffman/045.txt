@@ -1,0 +1,32 @@
+{
+    "query_match": [
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "australia"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        },
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "libya"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "libya",
+        "australia"
+    ]
+}

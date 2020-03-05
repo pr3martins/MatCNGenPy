@@ -1,0 +1,34 @@
+{
+    "query_match": [
+        {
+            "table": "religion",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "orthodox",
+                        "eastern"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        },
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "uzbekistan"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "uzbekistan",
+        "eastern",
+        "orthodox"
+    ]
+}

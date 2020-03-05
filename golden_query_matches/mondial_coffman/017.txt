@@ -1,0 +1,21 @@
+{
+    "query_match": [
+        {
+            "table": "organization",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "labor",
+                        "world"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "world",
+        "labor"
+    ]
+}

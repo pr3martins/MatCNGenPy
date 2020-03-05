@@ -1,0 +1,21 @@
+{
+    "query_match": [
+        {
+            "table": "lake",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "kariba",
+                        "lake"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "lake",
+        "kariba"
+    ]
+}

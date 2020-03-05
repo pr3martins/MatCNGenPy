@@ -1,0 +1,27 @@
+{
+    "query_match": [
+        {
+            "table": "city",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "granada"
+                    ]
+                }
+            ],
+            "schema_filter": [
+                {
+                    "attribute": "*",
+                    "keywords": [
+                        "city"
+                    ]
+                }
+            ]
+        }
+    ],
+    "query": [
+        "city",
+        "granada"
+    ]
+}

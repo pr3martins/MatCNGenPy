@@ -1,0 +1,23 @@
+{
+    "query_match": [
+        {
+            "table": "organization",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "council",
+                        "cooperation",
+                        "arab"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "arab",
+        "cooperation",
+        "council"
+    ]
+}

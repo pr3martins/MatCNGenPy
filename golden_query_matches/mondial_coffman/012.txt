@@ -1,0 +1,19 @@
+{
+    "query_match": [
+        {
+            "table": "river",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "niger"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "niger"
+    ]
+}

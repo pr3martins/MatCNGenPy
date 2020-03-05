@@ -1,0 +1,32 @@
+{
+    "query_match": [
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "spain"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        },
+        {
+            "table": "language",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "galician"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "spain",
+        "galician"
+    ]
+}

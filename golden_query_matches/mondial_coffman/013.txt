@@ -1,0 +1,21 @@
+{
+    "query_match": [
+        {
+            "table": "sea",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "sea",
+                        "arabian"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "arabian",
+        "sea"
+    ]
+}

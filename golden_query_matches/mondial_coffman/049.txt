@@ -1,0 +1,32 @@
+{
+    "query_match": [
+        {
+            "table": "river",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "rhein"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        },
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "germany"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "rhein",
+        "germany"
+    ]
+}

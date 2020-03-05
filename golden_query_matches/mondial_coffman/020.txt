@@ -1,0 +1,21 @@
+{
+    "query_match": [
+        {
+            "table": "organization",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "caribbean",
+                        "economic"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "caribbean",
+        "economic"
+    ]
+}

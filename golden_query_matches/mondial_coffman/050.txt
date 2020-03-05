@@ -1,0 +1,32 @@
+{
+    "query_match": [
+        {
+            "table": "river",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "nile"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        },
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "egypt"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "egypt",
+        "nile"
+    ]
+}

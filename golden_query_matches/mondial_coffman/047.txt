@@ -1,0 +1,32 @@
+{
+    "query_match": [
+        {
+            "table": "ethnic_group",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "serb"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        },
+        {
+            "table": "continent",
+            "value_filter": [],
+            "schema_filter": [
+                {
+                    "attribute": "*",
+                    "keywords": [
+                        "europe"
+                    ]
+                }
+            ]
+        }
+    ],
+    "query": [
+        "serb",
+        "europe"
+    ]
+}

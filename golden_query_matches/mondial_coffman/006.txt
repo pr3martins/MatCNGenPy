@@ -1,0 +1,19 @@
+{
+    "query_match": [
+        {
+            "table": "city",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "alexandria"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "alexandria"
+    ]
+}

@@ -1,0 +1,47 @@
+{
+    "query_match": [
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "cape",
+                        "verde"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        },
+        {
+            "table": "organization",
+            "value_filter": [],
+            "schema_filter": [
+                {
+                    "attribute": "*",
+                    "keywords": [
+                        "organization"
+                    ]
+                }
+            ]
+        },
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "poland"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "poland",
+        "cape",
+        "verde",
+        "organization"
+    ]
+}

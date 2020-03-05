@@ -1,0 +1,32 @@
+{
+    "query_match": [
+        {
+            "table": "country",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "slovakia"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        },
+        {
+            "table": "ethnic_group",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "german"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "slovakia",
+        "german"
+    ]
+}

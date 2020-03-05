@@ -1,0 +1,19 @@
+{
+    "query_match": [
+        {
+            "table": "city",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "xiaogan"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "xiaogan"
+    ]
+}

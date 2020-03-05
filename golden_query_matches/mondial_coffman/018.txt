@@ -1,0 +1,21 @@
+{
+    "query_match": [
+        {
+            "table": "organization",
+            "value_filter": [
+                {
+                    "attribute": "name",
+                    "keywords": [
+                        "islamic",
+                        "conference"
+                    ]
+                }
+            ],
+            "schema_filter": []
+        }
+    ],
+    "query": [
+        "islamic",
+        "conference"
+    ]
+}
